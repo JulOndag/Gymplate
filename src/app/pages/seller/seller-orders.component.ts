@@ -122,7 +122,7 @@ import { liveRefresh } from '../../shared/utils/live-refresh';
                       <span class="badge badge-neutral capitalize">{{ o.fulfillmentType }}</span>
                       <small class="text-tertiary block mt-1">
                         {{
-                          o.paymentMethod === 'cash_on_pickup' ? 'Cash Pickup' : 'Cash on Delivery'
+                          o.paymentMethod === 'ewallet' ? 'E-Wallet' : o.paymentMethod === 'cash_on_pickup' ? 'Cash Pickup' : 'Cash on Delivery'
                         }}
                       </small>
                     </td>

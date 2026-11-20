@@ -185,6 +185,7 @@ export class MockDataService {
       {
         id: 'user-1',
         email: 'customer@gymplate.com',
+        passwordHash: this.simpleHash('Customer123!'),
         role: 'customer' as UserRole,
         firstName: 'Alex',
         lastName: 'Rivera',
@@ -200,6 +201,7 @@ export class MockDataService {
       {
         id: 'user-2',
         email: 'seller@gymplate.com',
+        passwordHash: this.simpleHash('Seller123!'),
         role: 'seller' as UserRole,
         firstName: 'Maria',
         lastName: 'Santos',
@@ -215,6 +217,7 @@ export class MockDataService {
       {
         id: 'user-3',
         email: 'admin@gymplate.com',
+        passwordHash: this.simpleHash('Admin123!'),
         role: 'admin' as UserRole,
         firstName: 'James',
         lastName: 'Chen',
@@ -230,6 +233,7 @@ export class MockDataService {
       {
         id: 'user-4',
         email: 'pending@gymplate.com',
+        passwordHash: this.simpleHash('Pending123!'),
         role: 'seller' as UserRole,
         firstName: 'David',
         lastName: 'Kim',
@@ -245,6 +249,7 @@ export class MockDataService {
       {
         id: 'user-5',
         email: 'rejected@gymplate.com',
+        passwordHash: this.simpleHash('Rejected123!'),
         role: 'seller' as UserRole,
         firstName: 'Sarah',
         lastName: 'Johnson',
@@ -260,6 +265,7 @@ export class MockDataService {
       {
         id: 'user-6',
         email: 'john@example.com',
+        passwordHash: this.simpleHash('John1234!'),
         role: 'customer' as UserRole,
         firstName: 'John',
         lastName: 'Martinez',

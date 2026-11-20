@@ -52,7 +52,7 @@ import { OrderProgressComponent } from '../../shared/components/order-progress.c
               <div class="flex items-center gap-2 text-xs text-secondary">
                 <span>Fulfillment: <strong class="capitalize">{{ order.fulfillmentType }}</strong></span>
                 &bull;
-                <span>Payment: <strong>{{ order.paymentMethod === 'cash_on_pickup' ? 'Cash Pickup' : 'Cash on Delivery' }}</strong></span>
+                <span>Payment: <strong>{{ order.paymentMethod === 'ewallet' ? 'E-Wallet' : order.paymentMethod === 'cash_on_pickup' ? 'Cash Pickup' : 'Cash on Delivery' }}</strong></span>
               </div>
             </div>
           </div>

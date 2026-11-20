@@ -296,7 +296,7 @@ import { OrderProgressComponent } from '../../shared/components/order-progress.c
               </div>
               <div class="payment-method-row mt-3">
                 <span class="badge badge-neutral">
-                  {{ order.paymentMethod === 'cash_on_pickup' ? 'Cash on Pickup' : 'Cash on Delivery' }}
+                  {{ order.paymentMethod === 'ewallet' ? 'E-Wallet (GCash / Maya)' : order.paymentMethod === 'cash_on_pickup' ? 'Cash on Pickup' : 'Cash on Delivery' }}
                 </span>
                 <span class="badge" [class.badge-success]="order.paymentStatus === 'paid'" [class.badge-warning]="order.paymentStatus === 'pending'">
                   {{ order.paymentStatus === 'paid' ? 'Paid' : 'Payment Pending' }}

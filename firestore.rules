@@ -1,6 +1,7 @@
 rules_version = '2';
 
 // GymPlate Firestore Security Rules (users, seller applications, businesses, products, orders, notifications, reviews, reports, activity logs)
+// Paste into Firebase Console > Firestore Database > Rules > Publish.
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -8,7 +9,8 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-
+    // The admin role is stored in the user's own profile document.
+    // Admin documents can only be created manually in the Firebase console.
     function isAdmin() {
       return signedIn()
         && exists(/databases/$(database)/documents/users/$(request.auth.uid))
@@ -28,10 +30,11 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-     
+      // A user can read their own profile. Admins can read any profile.
       allow read: if signedIn() && (request.auth.uid == userId || isAdmin());
 
-  
+      // Registration: a user can create ONLY their own profile,
+      // and ONLY as 'customer' or 'seller' (nobody can make themselves admin).
       allow create: if signedIn()
         && request.auth.uid == userId
         && request.resource.data.keys().hasOnly([
@@ -41,7 +44,8 @@ service cloud.firestore {
         && request.resource.data.accountStatus == 'active'
         && request.resource.data.email == request.auth.token.email;
 
-   
+      // Update: users can edit their own contact details but NOT their role,
+      // status or email. Admins can update any profile (for example, suspend an account).
       allow update: if signedIn() && (
         isAdmin()
         || (request.auth.uid == userId
@@ -55,12 +59,13 @@ service cloud.firestore {
     }
 
 
-
+    // ─── Seller applications (document ID = the seller's UID) ───────────
     match /sellerApplications/{sellerId} {
-    
+      // A seller can read only their own application. Admins can read all.
       allow read: if signedIn() && (request.auth.uid == sellerId || isAdmin());
 
-
+      // A seller can submit ONLY their own application, ONLY as 'pending'.
+      // The fixed list of fields blocks a seller from adding review fields (reviewedBy, etc.).
       allow create: if isSeller()
         && request.auth.uid == sellerId
         && request.resource.data.userId == request.auth.uid
@@ -69,20 +74,21 @@ service cloud.firestore {
              'id', 'userId', 'personalInfo', 'businessInfo', 'documents',
              'status', 'submittedAt', 'updatedAt']);
 
-    
+      // Only an admin can approve, reject or request more information.
       allow update: if isAdmin();
       allow delete: if false;
     }
 
-   
+    // ─── Businesses (the seller's storefront, document ID = seller UID) ─
     match /businesses/{sellerId} {
-    
+      // Signed-in users can see kitchens (customers need the names).
       allow read: if signedIn();
 
-
+      // A business is created only when an admin approves the application.
       allow create: if isAdmin();
 
-    
+      // A seller can edit their own business details, but cannot change who owns it,
+      // its id, or whether it is active. Admins can change anything.
       allow update: if isAdmin()
         || (signedIn()
             && request.auth.uid == sellerId
@@ -93,7 +99,8 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-  
+    // ─── [PRODUCTS-FS #9] Products (meals). Document ID = product id ────────
+    // A seller may sell only when: seller role + active account + application APPROVED.
     function canSell() {
       return isSeller()
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.accountStatus == 'active'
@@ -101,7 +108,7 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/sellerApplications/$(request.auth.uid)).data.status == 'approved';
     }
 
-  
+    // Checks the values of a meal (stops negative prices, huge images, wrong types).
     function validProduct(d) {
       return d.name is string && d.name.size() > 0 && d.name.size() <= 100
         && d.description is string && d.description.size() <= 1000
@@ -118,12 +125,14 @@ service cloud.firestore {
     }
 
     match /products/{productId} {
-
+      // Anyone can read meals the admin has NOT disabled (public menu).
+      // A seller also reads their own (even disabled) meals. Admins read all.
       allow read: if resource.data.isDisabled == false
         || isAdmin()
         || (signedIn() && resource.data.sellerId == request.auth.uid);
 
- 
+      // Only an APPROVED, active seller can add a meal, only for their own kitchen,
+      // and a seller can never create it already disabled.
       allow create: if canSell()
         && request.resource.data.sellerId == request.auth.uid
         && request.resource.data.id == productId
@@ -135,7 +144,9 @@ service cloud.firestore {
              'imageUrl', 'nutrition', 'stock', 'isAvailable', 'isDisabled', 'createdAt', 'updatedAt'])
         && validProduct(request.resource.data);
 
-   
+      // A seller can edit only the listed fields of their own meal.
+      // Only the admin can disable / enable a meal (isDisabled, disableReason).
+      // A seller can archive / restore their own meal (isArchived, archivedAt) instead of deleting it.
       allow update: if isAdmin()
         || (canSell()
             && resource.data.sellerId == request.auth.uid
@@ -143,7 +154,8 @@ service cloud.firestore {
                  'name', 'description', 'category', 'price', 'imageUrl',
                  'nutrition', 'stock', 'isAvailable', 'isArchived', 'archivedAt', 'updatedAt'])
             && validProduct(request.resource.data))
-       
+        // [ORDERS-FS] An order changes the stock: it goes down when a customer orders and back up
+        // when the customer cancels. A customer may change ONLY these three fields, on a live meal.
         || (isCustomer()
             && resource.data.isDisabled == false
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
@@ -156,7 +168,8 @@ service cloud.firestore {
       allow delete: if isAdmin() || (canSell() && resource.data.sellerId == request.auth.uid);
     }
 
-
+    // ─── [ORDERS-FS] Orders. Document ID = order id ─────────────────────────
+    // What a SELLER may do to an order: only move it forward (never cancel).
     function validSellerStep(from, to) {
       return (from in ['pending', 'confirmed'] && to == 'preparing')
         || (from == 'preparing' && to == 'ready')
@@ -166,13 +179,13 @@ service cloud.firestore {
     }
 
     match /orders/{orderId} {
-   
+      // The customer, the seller of that order and admins can read it.
       allow read: if signedIn()
         && (resource.data.customerId == request.auth.uid
             || resource.data.sellerId == request.auth.uid
             || isAdmin());
 
-     
+      // Only an active customer can place an order, only for themselves, and only as 'pending'.
       allow create: if isCustomer()
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.accountStatus == 'active'
         && request.resource.data.id == orderId
@@ -183,7 +196,7 @@ service cloud.firestore {
         && request.resource.data.status == 'pending'
         && request.resource.data.paymentStatus == 'pending'
         && request.resource.data.fulfillmentType in ['pickup', 'delivery']
-        && request.resource.data.paymentMethod in ['cash_on_pickup', 'cash_on_delivery']
+        && request.resource.data.paymentMethod in ['cash_on_pickup', 'cash_on_delivery', 'ewallet']
         && request.resource.data.items is list
         && request.resource.data.items.size() > 0
         && request.resource.data.items.size() <= 30
@@ -199,19 +212,19 @@ service cloud.firestore {
              'paymentStatus', 'status', 'specialInstructions', 'statusHistory', 'createdAt', 'updatedAt']);
 
       allow update: if signedIn() && (
-    
+        // 1) The CUSTOMER cancels their own order (only before it is ready).
         (resource.data.customerId == request.auth.uid
           && resource.data.status in ['pending', 'confirmed']
           && request.resource.data.status == 'cancelled'
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(
                ['status', 'statusHistory', 'updatedAt']))
-     
+        // 2) An ADMIN can also cancel an order that is not finished.
         || (isAdmin()
           && resource.data.status in ['pending', 'confirmed', 'preparing', 'ready']
           && request.resource.data.status == 'cancelled'
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(
                ['status', 'statusHistory', 'updatedAt']))
-   
+        // 3) The SELLER of the order moves it forward. A seller can never set 'cancelled'.
         || (canSell()
           && resource.data.sellerId == request.auth.uid
           && validSellerStep(resource.data.status, request.resource.data.status)
@@ -224,18 +237,18 @@ service cloud.firestore {
               || (request.resource.data.prepMinutes is int
                   && request.resource.data.prepMinutes >= 1
                   && request.resource.data.prepMinutes <= 120)))
-      
+        // 4) The SELLER can hide (archive) a finished order from their own lists. Nothing else changes.
         || (canSell()
           && resource.data.sellerId == request.auth.uid
           && resource.data.status in ['completed', 'delivered', 'cancelled']
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['archivedBySeller'])
           && request.resource.data.archivedBySeller is bool)
-    
+        // 5) An ADMIN can do the same for their own lists.
         || (isAdmin()
           && resource.data.status in ['completed', 'delivered', 'cancelled']
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['archivedByAdmin'])
           && request.resource.data.archivedByAdmin is bool)
-
+        // 6) The CUSTOMER can hide (archive) a finished order from their own list. Nothing else changes.
         || (resource.data.customerId == request.auth.uid
           && resource.data.status in ['completed', 'delivered', 'cancelled']
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['archivedByCustomer'])
@@ -245,12 +258,13 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-
+    // ─── [ORDERS-FS] Notifications (the bell). Document ID = notification id ─────
     match /notifications/{notificationId} {
-   
+      // You only ever read your own notifications.
       allow read: if signedIn() && resource.data.userId == request.auth.uid;
 
-
+      // Anyone signed in can send a notification (a customer tells the seller about a new order, etc.),
+      // but only with the normal fields and always as unread.
       allow create: if signedIn()
         && request.resource.data.id == notificationId
         && request.resource.data.userId is string
@@ -260,7 +274,7 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(
              ['id', 'userId', 'type', 'title', 'message', 'isRead', 'link', 'createdAt']);
 
- 
+      // The owner can only mark it as read.
       allow update: if signedIn()
         && resource.data.userId == request.auth.uid
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isRead']);
@@ -268,16 +282,17 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-
+    // ─── [REVIEWS-FS] Reviews. Document ID = orderId_productId (so one review per meal per order) ───
+    // The order a review or report is about (used to prove the customer really ordered it).
     function orderOf(orderId) {
       return get(/databases/$(database)/documents/orders/$(orderId)).data;
     }
 
     match /reviews/{reviewId} {
-    
+      // Reviews are public: the stars show on every meal, even for visitors who are not logged in.
       allow read: if true;
 
-     
+      // Only the customer of a finished order can review it, only as themselves, one review per meal.
       allow create: if isCustomer()
         && exists(/databases/$(database)/documents/orders/$(request.resource.data.orderId))
         && request.resource.data.id == reviewId
@@ -299,20 +314,20 @@ service cloud.firestore {
              'id', 'orderId', 'customerId', 'customerName', 'sellerId', 'productId',
              'productName', 'rating', 'ratingLabel', 'comment', 'createdAt']);
 
-    
+      // A review can never be edited (that also stops anyone from changing the rating later).
       allow update: if false;
-    
+      // Only the admin can remove an abusive review.
       allow delete: if isAdmin();
     }
 
-    
+    // ─── [REPORTS-FS] Food reports (customer files, seller replies, admin decides) ───
     match /reports/{reportId} {
       allow read: if signedIn()
         && (resource.data.customerId == request.auth.uid
             || resource.data.sellerId == request.auth.uid
             || isAdmin());
 
-
+      // A customer can report only their OWN order, as 'submitted', with no seller reply or admin decision yet.
       allow create: if isCustomer()
         && exists(/databases/$(database)/documents/orders/$(request.resource.data.orderId))
         && request.resource.data.id == reportId
@@ -339,7 +354,7 @@ service cloud.firestore {
              'history', 'createdAt', 'updatedAt']);
 
       allow update: if signedIn() && (
-  
+        // 1) The SELLER of that order replies once (the report becomes 'under_review').
         (canSell()
           && resource.data.sellerId == request.auth.uid
           && resource.data.status in ['submitted', 'under_review']
@@ -350,7 +365,7 @@ service cloud.firestore {
           && request.resource.data.history.size() <= 50
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(
                ['sellerResponse', 'history', 'status', 'updatedAt']))
-
+        // 2) The ADMIN makes the decision.
         || (isAdmin()
           && request.resource.data.status in ['under_review', 'resolved', 'rejected']
           && request.resource.data.history.size() <= 50
@@ -361,14 +376,14 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-
+    // ─── Admin activity logs (append-only audit trail) ──────────────────
     match /activityLogs/{logId} {
       allow read: if isAdmin();
       allow create: if isAdmin() && request.resource.data.adminId == request.auth.uid;
       allow update, delete: if false;
     }
 
- 
+    // Everything else is blocked until its rules are written.
     match /{document=**} {
       allow read, write: if false;
     }

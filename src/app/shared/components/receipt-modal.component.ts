@@ -428,6 +428,7 @@ export class ReceiptModalComponent {
   }
 
   formatPaymentMethod(pm: string): string {
+    if (pm === 'ewallet') return 'E-Wallet (GCash / Maya)';
     return pm === 'cash_on_pickup' ? 'Cash on Pickup' : 'Cash on Delivery';
   }
 

@@ -1,5 +1,5 @@
 import { Component, OnInit, effect, inject, untracked } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../services/auth.service';
 import { ProductService } from '../../services/product.service';
@@ -19,13 +19,26 @@ import { greeting } from '../../shared/utils/dashboard.util';
   template: `
     <app-customer-nav></app-customer-nav>
 
+    <div
+      *ngIf="cartNotice"
+      style="position:fixed;top:76px;left:50%;transform:translateX(-50%);z-index:500;background:#1e432e;color:#fff;padding:10px 18px;border-radius:10px;font-size:13px;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.2)"
+    >
+      {{ cartNotice }}
+      <a
+        routerLink="/customer/cart"
+        style="color:#fff;text-decoration:underline;margin-left:10px"
+      ></a>
+    </div>
+
     <main class="page-content customer-dashboard">
       <div class="container">
         <!-- Welcome banner (same look as the seller and admin dashboards) -->
         <section class="dash-hero">
           <div class="dash-hero-text">
             <h1>{{ greet }}, {{ user()?.firstName }} {{ user()?.lastName }}</h1>
-            <p>Ready to fuel your training? Explore today's freshly prepared high-protein selections.</p>
+            <p>
+              Ready to fuel your training? Explore today's freshly prepared high-protein selections.
+            </p>
             <div class="dash-hero-actions">
               <a routerLink="/customer/explore" class="btn-hero">
                 <app-icon name="compass" [size]="14"></app-icon>
@@ -43,11 +56,15 @@ import { greeting } from '../../shared/utils/dashboard.util';
         <!-- 30-day nutrition log -->
         <div class="log-head">
           <h3>Your 30-day nutrition log</h3>
-          <span class="text-xs text-secondary">Based on {{ completedOrdersCount }} completed GymPlate meals</span>
+          <span class="text-xs text-secondary"
+            >Based on {{ completedOrdersCount }} completed GymPlate meals</span
+          >
         </div>
         <div class="dash-stats">
           <div class="card dash-stat">
-            <div class="dash-stat-icon warn"><app-icon name="zap" [size]="20" color="var(--color-warning)"></app-icon></div>
+            <div class="dash-stat-icon warn">
+              <app-icon name="zap" [size]="20" color="var(--color-warning)"></app-icon>
+            </div>
             <div class="dash-stat-body">
               <span class="dash-stat-label">Calories</span>
               <strong class="dash-stat-value">{{ totalNutrition.calories }}</strong>
@@ -55,7 +72,9 @@ import { greeting } from '../../shared/utils/dashboard.util';
             </div>
           </div>
           <div class="card dash-stat">
-            <div class="dash-stat-icon"><app-icon name="target" [size]="20" color="var(--color-primary)"></app-icon></div>
+            <div class="dash-stat-icon">
+              <app-icon name="target" [size]="20" color="var(--color-primary)"></app-icon>
+            </div>
             <div class="dash-stat-body">
               <span class="dash-stat-label">Protein</span>
               <strong class="dash-stat-value">{{ totalNutrition.protein }}g</strong>
@@ -63,7 +82,9 @@ import { greeting } from '../../shared/utils/dashboard.util';
             </div>
           </div>
           <div class="card dash-stat">
-            <div class="dash-stat-icon info"><app-icon name="layers" [size]="20" color="var(--color-info)"></app-icon></div>
+            <div class="dash-stat-icon info">
+              <app-icon name="layers" [size]="20" color="var(--color-info)"></app-icon>
+            </div>
             <div class="dash-stat-body">
               <span class="dash-stat-label">Carbs</span>
               <strong class="dash-stat-value">{{ totalNutrition.carbs }}g</strong>
@@ -71,7 +92,9 @@ import { greeting } from '../../shared/utils/dashboard.util';
             </div>
           </div>
           <div class="card dash-stat">
-            <div class="dash-stat-icon"><app-icon name="heart" [size]="20" color="var(--color-primary)"></app-icon></div>
+            <div class="dash-stat-icon">
+              <app-icon name="heart" [size]="20" color="var(--color-primary)"></app-icon>
+            </div>
             <div class="dash-stat-body">
               <span class="dash-stat-label">Fat</span>
               <strong class="dash-stat-value">{{ totalNutrition.fat }}g</strong>
@@ -86,11 +109,14 @@ import { greeting } from '../../shared/utils/dashboard.util';
             <div class="status-pulse-dot"></div>
             <div>
               <div class="flex items-center gap-2">
-                <span class="font-semibold text-sm">Order in Progress: {{ activeOrder.orderNumber }}</span>
+                <span class="font-semibold text-sm"
+                  >Order in Progress: {{ activeOrder.orderNumber }}</span
+                >
                 <span class="badge badge-info">{{ formatStatus(activeOrder.status) }}</span>
               </div>
               <p class="text-xs text-secondary mt-1">
-                From {{ activeOrder.businessName }} &bull; {{ activeOrder.items.length }} items &bull; {{ activeOrder.total | currency:'PHP':'symbol' }}
+                From {{ activeOrder.businessName }} &bull; {{ activeOrder.items.length }} items
+                &bull; {{ activeOrder.total | currency: 'PHP' : 'symbol' }}
               </p>
             </div>
           </div>
@@ -119,7 +145,7 @@ import { greeting } from '../../shared/utils/dashboard.util';
               <div class="card-body meal-body">
                 <div class="flex justify-between items-start mb-2">
                   <h3 class="meal-name">{{ p.name }}</h3>
-                  <span class="meal-price">{{ p.price | currency:'PHP':'symbol' }}</span>
+                  <span class="meal-price">{{ p.price | currency: 'PHP' : 'symbol' }}</span>
                 </div>
                 <p class="meal-desc">{{ p.description }}</p>
 
@@ -140,236 +166,222 @@ import { greeting } from '../../shared/utils/dashboard.util';
             </div>
           </div>
         </div>
-
-        <!-- Quick Access Navigation Grid -->
-        <div class="grid-3 quick-nav-grid mt-8">
-          <a routerLink="/customer/explore" class="quick-nav-card card">
-            <app-icon name="compass" [size]="24" color="var(--color-primary)"></app-icon>
-            <div>
-              <h4>Explore Kitchens</h4>
-              <p>Filter by calories and macros</p>
-            </div>
-          </a>
-          <a routerLink="/customer/orders" class="quick-nav-card card">
-            <app-icon name="package" [size]="24" color="var(--color-primary)"></app-icon>
-            <div>
-              <h4>Order History</h4>
-              <p>Past orders and itemized receipts</p>
-            </div>
-          </a>
-          <a routerLink="/customer/nutrition" class="quick-nav-card card">
-            <app-icon name="activity" [size]="24" color="var(--color-primary)"></app-icon>
-            <div>
-              <h4>Nutrition Logs</h4>
-              <p>Track your dietary intake</p>
-            </div>
-          </a>
-        </div>
       </div>
     </main>
 
     <app-public-footer></app-public-footer>
   `,
-  styles: [`
-    .log-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-3); flex-wrap: wrap; margin-bottom: var(--space-3); }
-    .log-head h3 { font-size: var(--font-size-base); }
-    .customer-dashboard {
-      background: var(--color-bg-secondary);
-      min-height: 85vh;
-    }
-    .welcome-banner {
-      background: #FFFFFF;
-      padding: var(--space-8);
-      border: 1px solid var(--color-border);
-      display: grid;
-      grid-template-columns: 1.4fr 1fr;
-      gap: var(--space-8);
-      align-items: center;
-      margin-bottom: var(--space-6);
-      border-radius: var(--radius-lg);
-    }
-    .user-greeting {
-      font-size: var(--font-size-xs);
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--color-primary);
-    }
-    .welcome-text h1 {
-      font-size: 2.25rem;
-      margin: 4px 0 var(--space-2);
-    }
-    .welcome-text p {
-      font-size: var(--font-size-sm);
-      color: var(--color-text-secondary);
-      margin-bottom: var(--space-5);
-    }
-    .welcome-actions {
-      display: flex;
-      gap: var(--space-3);
-      flex-wrap: wrap;
-    }
-
-    .macro-quick-card {
-      background: var(--color-bg-secondary);
-      border: 1px solid var(--color-border);
-      padding: var(--space-5);
-      border-radius: var(--radius-md);
-    }
-    .widget-title {
-      font-size: 11px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--color-text-secondary);
-      display: block;
-      margin-bottom: var(--space-3);
-    }
-    .widget-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 6px;
-      margin-bottom: var(--space-3);
-    }
-    .wcell {
-      background: white;
-      padding: 8px 4px;
-      border-radius: var(--radius-sm);
-      text-align: center;
-      border: 1px solid var(--color-border);
-    }
-    .wcell.highlight .wval {
-      color: var(--color-primary);
-    }
-    .wval {
-      font-size: var(--font-size-base);
-      font-weight: 700;
-      display: block;
-    }
-    .wlbl {
-      font-size: 9px;
-      color: var(--color-text-secondary);
-      text-transform: uppercase;
-    }
-    .widget-footer {
-      font-size: 10px;
-      color: var(--color-text-tertiary);
-      display: block;
-      text-align: center;
-    }
-
-    .active-order-alert {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: var(--space-4) var(--space-5);
-      background: #EFF6FF;
-      border: 1px solid #BFDBFE;
-      margin-bottom: var(--space-6);
-    }
-    .status-pulse-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: #3B82F6;
-      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
-    }
-
-    .meal-card {
-      display: flex;
-      flex-direction: column;
-    }
-    .meal-img-box {
-      height: 180px;
-      position: relative;
-      overflow: hidden;
-    }
-    .meal-img-box img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-    .protein-tag {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      background: rgba(45, 90, 61, 0.95);
-      color: white;
-      font-size: 11px;
-      font-weight: 700;
-      padding: 3px 8px;
-      border-radius: var(--radius-full);
-    }
-    .meal-body {
-      display: flex;
-      flex-direction: column;
-      flex: 1;
-    }
-    .meal-name {
-      font-size: var(--font-size-sm);
-      font-weight: 600;
-    }
-    .meal-price {
-      font-size: var(--font-size-sm);
-      font-weight: 700;
-      color: var(--color-primary);
-    }
-    .meal-desc {
-      font-size: var(--font-size-xs);
-      color: var(--color-text-secondary);
-      line-height: 1.4;
-      margin-bottom: var(--space-3);
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
-    .macro-chips {
-      display: flex;
-      gap: 6px;
-      font-size: 10px;
-      color: var(--color-text-secondary);
-      background: var(--color-bg-secondary);
-      padding: 4px 6px;
-      border-radius: var(--radius-sm);
-      margin-bottom: var(--space-3);
-    }
-    .meal-footer {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-top: auto;
-      padding-top: var(--space-2);
-      border-top: 1px solid var(--color-border);
-    }
-
-    .quick-nav-card {
-      display: flex;
-      align-items: center;
-      gap: var(--space-4);
-      padding: var(--space-4);
-      text-decoration: none;
-      color: var(--color-text);
-      transition: transform var(--transition);
-    }
-    .quick-nav-card:hover {
-      transform: translateY(-2px);
-    }
-    .quick-nav-card h4 {
-      font-size: var(--font-size-sm);
-      margin-bottom: 2px;
-    }
-    .quick-nav-card p {
-      font-size: var(--font-size-xs);
-      color: var(--color-text-secondary);
-    }
-
-    @media (max-width: 900px) {
-      .welcome-banner {
-        grid-template-columns: 1fr;
+  styles: [
+    `
+      .log-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: var(--space-3);
+        flex-wrap: wrap;
+        margin-bottom: var(--space-3);
       }
-    }
-  `]
+      .log-head h3 {
+        font-size: var(--font-size-base);
+      }
+      .customer-dashboard {
+        background: var(--color-bg-secondary);
+        min-height: 85vh;
+      }
+      .welcome-banner {
+        background: #ffffff;
+        padding: var(--space-8);
+        border: 1px solid var(--color-border);
+        display: grid;
+        grid-template-columns: 1.4fr 1fr;
+        gap: var(--space-8);
+        align-items: center;
+        margin-bottom: var(--space-6);
+        border-radius: var(--radius-lg);
+      }
+      .user-greeting {
+        font-size: var(--font-size-xs);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--color-primary);
+      }
+      .welcome-text h1 {
+        font-size: 2.25rem;
+        margin: 4px 0 var(--space-2);
+      }
+      .welcome-text p {
+        font-size: var(--font-size-sm);
+        color: var(--color-text-secondary);
+        margin-bottom: var(--space-5);
+      }
+      .welcome-actions {
+        display: flex;
+        gap: var(--space-3);
+        flex-wrap: wrap;
+      }
+
+      .macro-quick-card {
+        background: var(--color-bg-secondary);
+        border: 1px solid var(--color-border);
+        padding: var(--space-5);
+        border-radius: var(--radius-md);
+      }
+      .widget-title {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--color-text-secondary);
+        display: block;
+        margin-bottom: var(--space-3);
+      }
+      .widget-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 6px;
+        margin-bottom: var(--space-3);
+      }
+      .wcell {
+        background: white;
+        padding: 8px 4px;
+        border-radius: var(--radius-sm);
+        text-align: center;
+        border: 1px solid var(--color-border);
+      }
+      .wcell.highlight .wval {
+        color: var(--color-primary);
+      }
+      .wval {
+        font-size: var(--font-size-base);
+        font-weight: 700;
+        display: block;
+      }
+      .wlbl {
+        font-size: 9px;
+        color: var(--color-text-secondary);
+        text-transform: uppercase;
+      }
+      .widget-footer {
+        font-size: 10px;
+        color: var(--color-text-tertiary);
+        display: block;
+        text-align: center;
+      }
+
+      .active-order-alert {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: var(--space-4) var(--space-5);
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        margin-bottom: var(--space-6);
+      }
+      .status-pulse-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #3b82f6;
+        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+      }
+
+      .meal-card {
+        display: flex;
+        flex-direction: column;
+      }
+      .meal-img-box {
+        height: 180px;
+        position: relative;
+        overflow: hidden;
+      }
+      .meal-img-box img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .protein-tag {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: rgba(45, 90, 61, 0.95);
+        color: white;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 3px 8px;
+        border-radius: var(--radius-full);
+      }
+      .meal-body {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+      }
+      .meal-name {
+        font-size: var(--font-size-sm);
+        font-weight: 600;
+      }
+      .meal-price {
+        font-size: var(--font-size-sm);
+        font-weight: 700;
+        color: var(--color-primary);
+      }
+      .meal-desc {
+        font-size: var(--font-size-xs);
+        color: var(--color-text-secondary);
+        line-height: 1.4;
+        margin-bottom: var(--space-3);
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+      .macro-chips {
+        display: flex;
+        gap: 6px;
+        font-size: 10px;
+        color: var(--color-text-secondary);
+        background: var(--color-bg-secondary);
+        padding: 4px 6px;
+        border-radius: var(--radius-sm);
+        margin-bottom: var(--space-3);
+      }
+      .meal-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: auto;
+        padding-top: var(--space-2);
+        border-top: 1px solid var(--color-border);
+      }
+
+      .quick-nav-card {
+        display: flex;
+        align-items: center;
+        gap: var(--space-4);
+        padding: var(--space-4);
+        text-decoration: none;
+        color: var(--color-text);
+        transition: transform var(--transition);
+      }
+      .quick-nav-card:hover {
+        transform: translateY(-2px);
+      }
+      .quick-nav-card h4 {
+        font-size: var(--font-size-sm);
+        margin-bottom: 2px;
+      }
+      .quick-nav-card p {
+        font-size: var(--font-size-xs);
+        color: var(--color-text-secondary);
+      }
+
+      @media (max-width: 900px) {
+        .welcome-banner {
+          grid-template-columns: 1fr;
+        }
+      }
+    `,
+  ],
 })
 export class CustomerHomeComponent implements OnInit {
   // [PRODUCTS-FS #11] Refresh this screen whenever Firestore data changes
@@ -391,7 +403,6 @@ export class CustomerHomeComponent implements OnInit {
     private productService: ProductService,
     private orderService: OrderService,
     private cartService: CartService,
-    private router: Router
   ) {}
 
   user() {
@@ -401,28 +412,34 @@ export class CustomerHomeComponent implements OnInit {
   ngOnInit() {
     const products = this.productService.getProducts();
     // High protein items
-    this.recommendedProducts = products.filter(p => p.nutrition.protein >= 28).slice(0, 3);
+    this.recommendedProducts = products.filter((p) => p.nutrition.protein >= 28).slice(0, 3);
     this.heroImage = this.recommendedProducts[0]?.imageUrl || '';
 
     const currentUser = this.authService.user();
     if (currentUser) {
       const orders = this.orderService.getCustomerOrders(currentUser.id);
       // Active order
-      this.activeOrder = orders.find(o => ['pending', 'confirmed', 'preparing', 'ready', 'out_for_delivery'].includes(o.status)) || null;
+      this.activeOrder =
+        orders.find((o) =>
+          ['pending', 'confirmed', 'preparing', 'ready', 'out_for_delivery'].includes(o.status),
+        ) || null;
 
       // Completed orders calculation
-      const completed = orders.filter(o => o.status === 'completed' || o.status === 'delivered');
+      const completed = orders.filter((o) => o.status === 'completed' || o.status === 'delivered');
       this.completedOrdersCount = completed.length;
 
-      this.totalNutrition = completed.reduce((acc, order) => {
-        order.items.forEach(item => {
-          acc.calories += item.nutrition.calories;
-          acc.protein += item.nutrition.protein;
-          acc.carbs += item.nutrition.carbs;
-          acc.fat += item.nutrition.fat;
-        });
-        return acc;
-      }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
+      this.totalNutrition = completed.reduce(
+        (acc, order) => {
+          order.items.forEach((item) => {
+            acc.calories += item.nutrition.calories;
+            acc.protein += item.nutrition.protein;
+            acc.carbs += item.nutrition.carbs;
+            acc.fat += item.nutrition.fat;
+          });
+          return acc;
+        },
+        { calories: 0, protein: 0, carbs: 0, fat: 0 },
+      );
     }
   }
 
@@ -432,15 +449,18 @@ export class CustomerHomeComponent implements OnInit {
       confirmed: 'Confirmed by Kitchen',
       preparing: 'Preparing in Kitchen',
       ready: 'Ready for Pickup',
-      out_for_delivery: 'Out for Delivery'
+      out_for_delivery: 'Out for Delivery',
     };
     return labels[status] || status;
   }
 
+  cartNotice = '';
+
   addToCart(product: Product) {
     const res = this.cartService.addItem(product, 1);
     if (res.success) {
-      this.router.navigate(['/customer/cart']);
+      this.cartNotice = `Added ${product.name} to cart.`;
+      setTimeout(() => (this.cartNotice = ''), 3000);
     } else {
       alert(res.message);
     }

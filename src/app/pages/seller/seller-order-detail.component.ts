@@ -182,7 +182,7 @@ import { OrderProgressComponent } from '../../shared/components/order-progress.c
                 <div class="c-line">
                   <span class="lbl">Payment:</span>
                   <span class="val capitalize">{{
-                    order.paymentMethod === 'cash_on_pickup' ? 'Cash on Pickup' : 'Cash on Delivery'
+                    order.paymentMethod === 'ewallet' ? 'E-Wallet (GCash / Maya)' : order.paymentMethod === 'cash_on_pickup' ? 'Cash on Pickup' : 'Cash on Delivery'
                   }}</span>
                 </div>
                 <div class="c-line">

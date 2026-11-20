@@ -1,5 +1,5 @@
 import { Component, OnInit, effect, inject, untracked } from '@angular/core';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ProductService } from '../../services/product.service';
@@ -106,6 +106,7 @@ import { CloudStoreService } from '../../services/cloud-store.service';
               <div class="alert alert-success" *ngIf="successMessage">
                 <app-icon name="check-circle" [size]="16"></app-icon>
                 <span>{{ successMessage }}</span>
+                <a routerLink="/customer/cart" class="ml-auto font-semibold">View cart</a>
               </div>
 
               <!-- Quantity & Special Instructions -->
@@ -430,7 +431,6 @@ export class ProductDetailComponent implements OnInit {
 
   constructor(
     private route: ActivatedRoute,
-    private router: Router,
     private productService: ProductService,
     private cartService: CartService,
     private mockData: MockDataService
@@ -469,10 +469,9 @@ export class ProductDetailComponent implements OnInit {
     if (!res.success) {
       this.errorMessage = res.message;
     } else {
+      // [STAY-ON-MEALS] The meal goes into the cart, but the screen stays here.
       this.successMessage = `Added ${this.quantity}x ${this.product.name} to cart.`;
-      setTimeout(() => {
-        this.router.navigate(['/customer/cart']);
-      }, 700);
+      setTimeout(() => (this.successMessage = ''), 3000);
     }
   }
 }

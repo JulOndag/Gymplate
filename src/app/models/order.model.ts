@@ -8,7 +8,7 @@ export type OrderStatus =
   | 'completed'
   | 'cancelled';
 export type FulfillmentType = 'pickup' | 'delivery';
-export type PaymentMethod = 'cash_on_pickup' | 'cash_on_delivery';
+export type PaymentMethod = 'cash_on_pickup' | 'cash_on_delivery' | 'ewallet'; // [EWALLET] demo e-wallet (GCash / Maya)
 export type PaymentStatus = 'pending' | 'paid';
 
 export interface OrderItem {
