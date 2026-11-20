@@ -103,16 +103,6 @@ import { PORTAL_SIDEBAR_STYLES } from './portal-sidebar.styles';
         </a>
 
         <a
-          routerLink="/admin/customers"
-          routerLinkActive="active"
-          (click)="closeMobileDrawer()"
-          [title]="'Customers'"
-        >
-          <app-icon name="users" [size]="18"></app-icon>
-          <span class="link-label" *ngIf="!isCollapsed()">Customers</span>
-        </a>
-
-        <a
           routerLink="/admin/products"
           routerLinkActive="active"
           (click)="closeMobileDrawer()"
@@ -120,16 +110,6 @@ import { PORTAL_SIDEBAR_STYLES } from './portal-sidebar.styles';
         >
           <app-icon name="package" [size]="18"></app-icon>
           <span class="link-label" *ngIf="!isCollapsed()">Products</span>
-        </a>
-
-        <a
-          routerLink="/admin/orders"
-          routerLinkActive="active"
-          (click)="closeMobileDrawer()"
-          [title]="'Platform Orders'"
-        >
-          <app-icon name="clipboard-list" [size]="18"></app-icon>
-          <span class="link-label" *ngIf="!isCollapsed()">Orders</span>
         </a>
 
         <a

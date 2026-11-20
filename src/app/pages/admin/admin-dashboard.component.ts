@@ -26,16 +26,6 @@ import { CloudStoreService } from '../../services/cloud-store.service';
             <div class="dash-hero-text">
               <h1>{{ greet }}, {{ adminName() }}</h1>
               <p>Here is how the GymPlate marketplace is doing today.</p>
-              <div class="dash-hero-actions">
-                <a routerLink="/admin/applications" class="btn-hero">
-                  <app-icon name="file-text" [size]="14"></app-icon>
-                  Review applications ({{ stats.pendingApplications }})
-                </a>
-                <a routerLink="/admin/reports" class="btn-hero ghost">
-                  <app-icon name="bar-chart-2" [size]="14"></app-icon>
-                  Platform reports
-                </a>
-              </div>
             </div>
             <img class="dash-hero-img" *ngIf="heroImage" [src]="heroImage" alt="" />
           </section>
@@ -57,7 +47,9 @@ import { CloudStoreService } from '../../services/cloud-store.service';
           <!-- Stat cards -->
           <div class="dash-stats">
             <div class="card dash-stat">
-              <div class="dash-stat-icon"><app-icon name="users" [size]="20" color="var(--color-primary)"></app-icon></div>
+              <div class="dash-stat-icon">
+                <app-icon name="users" [size]="20" color="var(--color-primary)"></app-icon>
+              </div>
               <div class="dash-stat-body">
                 <span class="dash-stat-label">Total customers</span>
                 <strong class="dash-stat-value">{{ stats.totalCustomers }}</strong>
@@ -65,7 +57,9 @@ import { CloudStoreService } from '../../services/cloud-store.service';
               </div>
             </div>
             <div class="card dash-stat">
-              <div class="dash-stat-icon"><app-icon name="store" [size]="20" color="var(--color-primary)"></app-icon></div>
+              <div class="dash-stat-icon">
+                <app-icon name="store" [size]="20" color="var(--color-primary)"></app-icon>
+              </div>
               <div class="dash-stat-body">
                 <span class="dash-stat-label">Approved sellers</span>
                 <strong class="dash-stat-value">{{ stats.approvedSellers }}</strong>
@@ -73,7 +67,9 @@ import { CloudStoreService } from '../../services/cloud-store.service';
               </div>
             </div>
             <div class="card dash-stat">
-              <div class="dash-stat-icon info"><app-icon name="package" [size]="20" color="var(--color-info)"></app-icon></div>
+              <div class="dash-stat-icon info">
+                <app-icon name="package" [size]="20" color="var(--color-info)"></app-icon>
+              </div>
               <div class="dash-stat-body">
                 <span class="dash-stat-label">Active menu items</span>
                 <strong class="dash-stat-value">{{ stats.totalProducts }}</strong>
@@ -81,13 +77,24 @@ import { CloudStoreService } from '../../services/cloud-store.service';
               </div>
             </div>
             <div class="card dash-stat">
-              <div class="dash-stat-icon"><app-icon name="dollar-sign" [size]="20" color="var(--color-primary)"></app-icon></div>
+              <div class="dash-stat-icon">
+                <app-icon name="dollar-sign" [size]="20" color="var(--color-primary)"></app-icon>
+              </div>
               <div class="dash-stat-body">
                 <span class="dash-stat-label">Gross order value</span>
-                <strong class="dash-stat-value">{{ stats.totalOrderValue | currency: 'PHP' : 'symbol' : '1.0-0' }}</strong>
-                <span class="dash-stat-sub">{{ stats.completedOrders }} of {{ stats.totalOrders }} completed</span>
+                <strong class="dash-stat-value">{{
+                  stats.totalOrderValue | currency: 'PHP' : 'symbol' : '1.0-0'
+                }}</strong>
+                <span class="dash-stat-sub"
+                  >{{ stats.completedOrders }} of {{ stats.totalOrders }} completed</span
+                >
               </div>
-              <svg class="dash-spark" viewBox="0 0 96 32" preserveAspectRatio="none" aria-label="Orders in the last 7 days">
+              <svg
+                class="dash-spark"
+                viewBox="0 0 96 32"
+                preserveAspectRatio="none"
+                aria-label="Orders in the last 7 days"
+              >
                 <path [attr.d]="sparkD"></path>
               </svg>
             </div>
@@ -117,11 +124,20 @@ import { CloudStoreService } from '../../services/cloud-store.service';
                     <tr *ngFor="let a of pendingApps">
                       <td>
                         <strong class="text-xs">{{ a.businessInfo.businessName }}</strong>
-                        <small class="text-secondary block">{{ a.personalInfo.firstName }} {{ a.personalInfo.lastName }} &bull; {{ a.businessInfo.businessType }}</small>
+                        <small class="text-secondary block"
+                          >{{ a.personalInfo.firstName }} {{ a.personalInfo.lastName }} &bull;
+                          {{ a.businessInfo.businessType }}</small
+                        >
                       </td>
-                      <td class="text-xs text-secondary">{{ a.submittedAt | date: 'shortDate' }}</td>
+                      <td class="text-xs text-secondary">
+                        {{ a.submittedAt | date: 'shortDate' }}
+                      </td>
                       <td class="text-right">
-                        <a [routerLink]="['/admin/applications', a.id]" class="btn btn-primary btn-sm">Inspect &amp; verify</a>
+                        <a
+                          [routerLink]="['/admin/applications', a.id]"
+                          class="btn btn-primary btn-sm"
+                          >Inspect &amp; verify</a
+                        >
                       </td>
                     </tr>
                   </tbody>
@@ -151,10 +167,14 @@ import { CloudStoreService } from '../../services/cloud-store.service';
                         <span class="dash-rank-name">{{ m.name }}</span>
                         <span class="dash-rank-meta">{{ m.qty }} orders</span>
                       </div>
-                      <div class="dash-bar"><span [style.width.%]="(m.qty / maxQty) * 100"></span></div>
+                      <div class="dash-bar">
+                        <span [style.width.%]="(m.qty / maxQty) * 100"></span>
+                      </div>
                     </div>
                   </div>
-                  <p class="text-xs text-secondary" *ngIf="topSelling.length === 0">No orders yet.</p>
+                  <p class="text-xs text-secondary" *ngIf="topSelling.length === 0">
+                    No orders yet.
+                  </p>
                 </div>
               </div>
 
@@ -175,10 +195,14 @@ import { CloudStoreService } from '../../services/cloud-store.service';
                         <small class="text-tertiary">{{ log.timestamp | date: 'short' }}</small>
                       </div>
                       <p class="text-xs text-secondary mt-1">{{ log.details }}</p>
-                      <small class="text-tertiary block mt-1" *ngIf="log.reason">Reason: {{ log.reason }}</small>
+                      <small class="text-tertiary block mt-1" *ngIf="log.reason"
+                        >Reason: {{ log.reason }}</small
+                      >
                     </div>
                   </div>
-                  <p class="text-xs text-secondary" *ngIf="recentLogs.length === 0">No activity yet.</p>
+                  <p class="text-xs text-secondary" *ngIf="recentLogs.length === 0">
+                    No activity yet.
+                  </p>
                 </div>
               </div>
             </div>
@@ -189,7 +213,9 @@ import { CloudStoreService } from '../../services/cloud-store.service';
   `,
   styles: [
     `
-      .admin-layout { background: var(--color-bg-secondary); }
+      .admin-layout {
+        background: var(--color-bg-secondary);
+      }
       .pending-alert {
         padding: var(--space-3) var(--space-5);
         background: #fff8e7;
@@ -199,7 +225,11 @@ import { CloudStoreService } from '../../services/cloud-store.service';
         gap: var(--space-3);
         margin-bottom: var(--space-6);
       }
-      .side-stack { display: flex; flex-direction: column; gap: var(--space-6); }
+      .side-stack {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-6);
+      }
       .activity-row {
         display: flex;
         gap: var(--space-3);
@@ -207,9 +237,21 @@ import { CloudStoreService } from '../../services/cloud-store.service';
         padding: var(--space-3) 0;
         border-bottom: 1px solid var(--color-border);
       }
-      .activity-row:last-child { border-bottom: none; }
-      .act-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--color-accent); margin-top: 5px; flex-shrink: 0; }
-      .act-content { flex: 1; min-width: 0; }
+      .activity-row:last-child {
+        border-bottom: none;
+      }
+      .act-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--color-accent);
+        margin-top: 5px;
+        flex-shrink: 0;
+      }
+      .act-content {
+        flex: 1;
+        min-width: 0;
+      }
     `,
   ],
 })
