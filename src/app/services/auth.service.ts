@@ -184,6 +184,23 @@ export class AuthService {
     }
   }
 
+  /** [PROFILE-PHOTO] Save (or remove, with '') the person's own profile picture. */
+  async setAvatar(dataUrl: string): Promise<boolean> {
+    const user = this.currentUser();
+    if (!user) return false;
+    const updatedAt = new Date().toISOString();
+    try {
+      await updateDoc(doc(firestore, 'users', user.id), { avatarUrl: dataUrl, updatedAt });
+      const updated: User = { ...user, avatarUrl: dataUrl, updatedAt: new Date(updatedAt) };
+      this.currentUser.set(updated);
+      this.syncToMock(updated);
+      return true;
+    } catch (e) {
+      console.error('setAvatar failed:', e);
+      return false;
+    }
+  }
+
   async refreshUser(): Promise<void> {
     const user = this.currentUser();
     if (!user) return;

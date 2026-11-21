@@ -52,7 +52,14 @@ service cloud.firestore {
             && request.resource.data.role == resource.data.role
             && request.resource.data.accountStatus == resource.data.accountStatus
             && request.resource.data.email == resource.data.email
-            && request.resource.data.createdAt == resource.data.createdAt)
+            && request.resource.data.createdAt == resource.data.createdAt
+            // [PROFILE-PHOTO] only these fields can change, and the picture must stay small
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+                 'firstName', 'lastName', 'phone', 'address', 'city', 'state', 'zipCode',
+                 'avatarUrl', 'updatedAt'])
+            && (!('avatarUrl' in request.resource.data)
+                || (request.resource.data.avatarUrl is string
+                    && request.resource.data.avatarUrl.size() < 100000)))
       );
 
       allow delete: if false;
@@ -124,10 +131,20 @@ service cloud.firestore {
         && d.nutrition.fat is number && d.nutrition.fat >= 0;
     }
 
+    // [NUTRITION-REVIEW] A seller can never mark their own nutrition as 'verified'.
+    // If the numbers or the reference link change, the meal goes back to 'pending' for the admin.
+    function nutritionStaysHonest(newD, oldD) {
+      return (newD.nutrition == oldD.nutrition
+              && newD.get('nutritionSourceUrl', '') == oldD.get('nutritionSourceUrl', ''))
+        ? newD.get('nutritionStatus', 'pending') == oldD.get('nutritionStatus', 'pending')
+        : newD.get('nutritionStatus', 'pending') == 'pending';
+    }
+
     match /products/{productId} {
-      // Anyone can read meals the admin has NOT disabled (public menu).
-      // A seller also reads their own (even disabled) meals. Admins read all.
-      allow read: if resource.data.isDisabled == false
+      // [NUTRITION-GATE] The public menu shows only meals that are NOT disabled AND whose nutrition
+      // the admin VERIFIED. A seller also reads their own meals (any status). Admins read all.
+      allow read: if (resource.data.isDisabled == false
+            && resource.data.get('nutritionStatus', 'pending') == 'verified')
         || isAdmin()
         || (signedIn() && resource.data.sellerId == request.auth.uid);
 
@@ -137,11 +154,16 @@ service cloud.firestore {
         && request.resource.data.sellerId == request.auth.uid
         && request.resource.data.id == productId
         && request.resource.data.isDisabled == false
+        && request.resource.data.nutritionSourceUrl is string
+        && request.resource.data.nutritionSourceUrl.matches('^https?://.+')
+        && request.resource.data.nutritionSourceUrl.size() <= 500
+        && request.resource.data.nutritionStatus == 'pending'
         && request.resource.data.businessId ==
              get(/databases/$(database)/documents/businesses/$(request.auth.uid)).data.id
         && request.resource.data.keys().hasOnly([
              'id', 'sellerId', 'businessId', 'name', 'description', 'category', 'price',
-             'imageUrl', 'nutrition', 'stock', 'isAvailable', 'isDisabled', 'createdAt', 'updatedAt'])
+             'imageUrl', 'nutrition', 'stock', 'isAvailable', 'isDisabled', 'createdAt', 'updatedAt',
+             'nutritionSourceUrl', 'nutritionStatus'])
         && validProduct(request.resource.data);
 
       // A seller can edit only the listed fields of their own meal.
@@ -152,7 +174,13 @@ service cloud.firestore {
             && resource.data.sellerId == request.auth.uid
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
                  'name', 'description', 'category', 'price', 'imageUrl',
-                 'nutrition', 'stock', 'isAvailable', 'isArchived', 'archivedAt', 'updatedAt'])
+                 'nutrition', 'stock', 'isAvailable', 'isArchived', 'archivedAt', 'updatedAt',
+                 'nutritionSourceUrl', 'nutritionStatus'])
+            && (!('nutritionSourceUrl' in request.resource.data)
+                || (request.resource.data.nutritionSourceUrl is string
+                    && request.resource.data.nutritionSourceUrl.matches('^https?://.+')
+                    && request.resource.data.nutritionSourceUrl.size() <= 500))
+            && nutritionStaysHonest(request.resource.data, resource.data)
             && validProduct(request.resource.data))
         // [ORDERS-FS] An order changes the stock: it goes down when a customer orders and back up
         // when the customer cancels. A customer may change ONLY these three fields, on a live meal.

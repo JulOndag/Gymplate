@@ -115,6 +115,8 @@ export class ProductService {
         stock: m.stock,
         isAvailable: true,
         isDisabled: false,
+        nutritionSourceUrl: 'https://fdc.nal.usda.gov/', // [NUTRITION-REVIEW] sample meals point to USDA FoodData Central
+        nutritionStatus: 'pending',
         createdAt: now,
         updatedAt: now
       };

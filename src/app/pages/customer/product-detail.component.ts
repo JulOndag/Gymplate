@@ -75,6 +75,14 @@ import { CloudStoreService } from '../../services/cloud-store.service';
                   <span class="font-semibold text-xs uppercase">Macronutrient Facts</span>
                   <span class="text-xs text-secondary">Serving: {{ product.nutrition.servingSize }}</span>
                 </div>
+                <!-- [NUTRITION-REVIEW] shows whether an admin checked these numbers -->
+                <div class="text-xs" style="margin-bottom:8px" *ngIf="product.nutritionStatus === 'verified'">
+                  <span class="badge badge-success">&#10003; Nutrition verified by admin</span>
+                  <a *ngIf="product.nutritionSourceUrl" [href]="product.nutritionSourceUrl" target="_blank" rel="noopener noreferrer" style="margin-left:8px">View source</a>
+                </div>
+                <div class="text-xs text-secondary" style="margin-bottom:8px" *ngIf="product.nutritionStatus !== 'verified'">
+                  Nutrition facts are provided by the kitchen and not yet verified by an admin.
+                </div>
                 <div class="nutrition-grid-detailed">
                   <div class="macro-metric">
                     <span class="num highlight">{{ product.nutrition.protein }}g</span>

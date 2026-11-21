@@ -83,3 +83,30 @@ export function makePlaceholderImage(title: string, category: string): string {
 export function compressAvatarToDataUrl(file: File): Promise<string> {
   return draw(file, 256, 0.8);
 }
+
+// [PROFILE-PHOTO] A small square picture for a profile (cropped from the middle, about 20-40 KB).
+export function squareAvatarDataUrl(file: File, size = 256, quality = 0.8): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const side = Math.min(img.width, img.height);
+      const sx = (img.width - side) / 2;
+      const sy = (img.height - side) / 2;
+      const canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d')!;
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, size, size);
+      ctx.drawImage(img, sx, sy, side, side, 0, 0, size, size);
+      URL.revokeObjectURL(url);
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error('Could not read the image'));
+    };
+    img.src = url;
+  });
+}

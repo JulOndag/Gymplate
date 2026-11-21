@@ -1,14 +1,16 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
 import { SellerSidebarComponent } from '../../shared/components/seller-sidebar.component';
 import { IconComponent } from '../../shared/components/icon.component';
+import { ProfilePhotoComponent } from '../../shared/components/profile-photo.component';
+import { SellerService } from '../../services/seller.service';
 
 @Component({
   selector: 'app-seller-settings',
   standalone: true,
-  imports: [CommonModule, FormsModule, SellerSidebarComponent, IconComponent],
+  imports: [CommonModule, FormsModule, SellerSidebarComponent, IconComponent, ProfilePhotoComponent],
   template: `
     <div class="seller-layout">
       <app-seller-sidebar></app-seller-sidebar>
@@ -28,6 +30,20 @@ import { IconComponent } from '../../shared/components/icon.component';
           <div class="alert alert-success mb-4" *ngIf="successMessage">
             <app-icon name="check-circle" [size]="16"></app-icon>
             <span>{{ successMessage }}</span>
+          </div>
+
+          <!-- [PROFILE-PHOTO] profile picture; the kitchen logo is used until they add their own -->
+          <div class="card settings-card mb-4">
+            <h3>Your Profile</h3>
+            <div class="mt-3">
+              <app-profile-photo
+                [fallbackUrl]="kitchenLogo()"
+                hint="Your kitchen logo from the application is used until you add your own picture."
+              ></app-profile-photo>
+            </div>
+            <p class="text-xs text-secondary mt-3">
+              Kitchen: <strong>{{ kitchenName() || 'Not set' }}</strong> &bull; {{ ownerName() }}
+            </p>
           </div>
 
           <div class="card settings-card">
@@ -289,6 +305,24 @@ export class SellerSettingsComponent {
     lowStockAlerts: true,
   };
   successMessage = '';
+
+  private auth = inject(AuthService);
+  private sellerService = inject(SellerService);
+
+  kitchenName(): string {
+    const u = this.auth.user();
+    return u ? this.sellerService.getKitchenName(u.id) : '';
+  }
+
+  kitchenLogo(): string {
+    const u = this.auth.user();
+    return u ? this.sellerService.getKitchenLogo(u.id) : '';
+  }
+
+  ownerName(): string {
+    const u = this.auth.user();
+    return u ? `${u.firstName} ${u.lastName}` : '';
+  }
 
   saveSettings() {
     this.successMessage = 'Kitchen preferences saved successfully.';

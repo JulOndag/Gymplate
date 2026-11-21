@@ -137,6 +137,34 @@ import { compressImageToDataUrl } from '../../shared/utils/image.util'; // [PROD
                 </div>
               </div>
 
+              <div class="form-group" *ngIf="product.nutritionStatus">
+                <span class="badge" [class.badge-success]="product.nutritionStatus === 'verified'"
+                      [class.badge-danger]="product.nutritionStatus === 'rejected'"
+                      [class.badge-warning]="product.nutritionStatus === 'pending'">
+                  Nutrition: {{ product.nutritionStatus === 'verified' ? 'Verified by admin' : product.nutritionStatus === 'rejected' ? 'Rejected by admin' : 'Waiting for admin review' }}
+                </span>
+                <small class="text-xs text-danger block mt-1" *ngIf="product.nutritionStatus === 'rejected' && product.nutritionReviewNote">
+                  Admin note: {{ product.nutritionReviewNote }}
+                </small>
+              </div>
+              <!-- [NUTRITION-REVIEW] Reference link so the admin can check the numbers -->
+              <div class="form-group mt-4">
+                <label class="form-label" for="editNutritionSource">Nutrition Reference Link <span class="text-danger">*</span></label>
+                <input
+                  id="editNutritionSource"
+                  type="url"
+                  class="form-control"
+                  placeholder="https://... (brand page, USDA FoodData Central, label photo page)"
+                  [(ngModel)]="product.nutritionSourceUrl"
+                  name="nutritionSourceUrl"
+                  required
+                />
+                <small class="text-xs text-secondary">
+                  The admin opens this link to check your protein, carbs, fat and calories before the numbers are marked "Verified".
+                </small>
+                <small class="text-xs text-danger block" *ngIf="sourceError">{{ sourceError }}</small>
+              </div>
+
               <!-- Stock & Availability -->
               <div class="form-row mt-4">
                 <div class="form-group">
@@ -335,6 +363,8 @@ export class EditProductComponent implements OnInit {
   isSaving = false;
   isDragging = false;
   uploadError = '';
+  sourceError = '';
+  private originalNutrition = ''; // [NUTRITION-REVIEW] to notice when the numbers or link change
   uploadedFileName = '';
 
   constructor(
@@ -350,6 +380,7 @@ export class EditProductComponent implements OnInit {
       const found = this.productService.getProduct(id);
       if (found) {
         this.product = { ...found, nutrition: { ...found.nutrition } };
+        this.originalNutrition = JSON.stringify([found.nutrition, found.nutritionSourceUrl || '']);
       }
     }
   }
@@ -425,6 +456,17 @@ export class EditProductComponent implements OnInit {
     if (!this.product.imageUrl) {
       this.uploadError = 'Please upload a photo of your meal before saving changes.';
       return;
+    }
+
+    // [NUTRITION-REVIEW] a reference link is required; changed numbers or link go back to admin review
+    this.sourceError = '';
+    this.product.nutritionSourceUrl = (this.product.nutritionSourceUrl || '').trim();
+    if (!/^https?:\/\/\S+\.\S+/i.test(this.product.nutritionSourceUrl)) {
+      this.sourceError = 'Enter a valid link that starts with https:// where the nutrition numbers can be checked.';
+      return;
+    }
+    if (JSON.stringify([this.product.nutrition, this.product.nutritionSourceUrl]) !== this.originalNutrition) {
+      this.product.nutritionStatus = 'pending';
     }
 
     this.isSaving = true;

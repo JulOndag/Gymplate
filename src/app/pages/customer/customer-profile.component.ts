@@ -6,11 +6,12 @@ import { User } from '../../models';
 import { CustomerNavComponent } from '../../shared/components/customer-nav.component';
 import { PublicFooterComponent } from '../../shared/components/public-footer.component';
 import { IconComponent } from '../../shared/components/icon.component';
+import { ProfilePhotoComponent } from '../../shared/components/profile-photo.component';
 
 @Component({
   selector: 'app-customer-profile',
   standalone: true,
-  imports: [CommonModule, FormsModule, CustomerNavComponent, PublicFooterComponent, IconComponent],
+  imports: [CommonModule, FormsModule, CustomerNavComponent, PublicFooterComponent, IconComponent, ProfilePhotoComponent],
   template: `
     <app-customer-nav></app-customer-nav>
 
@@ -29,9 +30,7 @@ import { IconComponent } from '../../shared/components/icon.component';
         <div class="card profile-card" *ngIf="user">
           <!-- User Meta Header -->
           <div class="user-profile-header">
-            <div class="avatar-large">
-              {{ initials() }}
-            </div>
+            <app-profile-photo></app-profile-photo>
             <div class="user-meta-info">
               <h2>{{ user.firstName }} {{ user.lastName }}</h2>
               <span class="user-email text-xs text-secondary">{{ user.email }}</span>

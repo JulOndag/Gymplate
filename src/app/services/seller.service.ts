@@ -28,6 +28,21 @@ export class SellerService {
     return this.mockData.getBusinessBySellerId(sellerId);
   }
 
+  /** [PROFILE-PHOTO] The kitchen name: from the business once approved, otherwise from the application. */
+  getKitchenName(sellerId: string): string {
+    return (
+      this.getBusiness(sellerId)?.businessName ||
+      this.getApplication(sellerId)?.businessInfo.businessName ||
+      ''
+    );
+  }
+
+  /** The kitchen logo (from the business, or from the application before approval). Ignores demo entries. */
+  getKitchenLogo(sellerId: string): string {
+    const url = this.getBusiness(sellerId)?.logoUrl || this.getApplication(sellerId)?.documents.logo?.url || '';
+    return url.startsWith('data:') || url.startsWith('http') ? url : '';
+  }
+
   async updateBusiness(business: Business): Promise<boolean> {
     const ok = await this.cloud.saveBusiness(business);
     if (ok) this.mockData.upsertBusiness(business);
@@ -79,6 +94,7 @@ export class SellerService {
       phone: app.businessInfo.businessPhone,
       email: app.businessInfo.businessEmail,
       operatingHours: app.businessInfo.operatingHours,
+      logoUrl: app.documents.logo?.url, // [APP-DOCS] the logo the seller uploaded
       isActive: true,
       createdAt: new Date(),
       updatedAt: new Date()

@@ -114,6 +114,24 @@ import { CloudStoreService } from '../../services/cloud-store.service';
                 </div>
                 <span class="badge badge-success">Attached</span>
               </div>
+
+              <div class="doc-item mt-2" *ngIf="application.documents.signedApplication">
+                <app-icon name="file-text" [size]="16" color="var(--color-primary)"></app-icon>
+                <div class="flex-1">
+                  <span class="text-xs font-semibold block">Business Application Signed by the Government</span>
+                  <span class="text-xs text-secondary">{{ application.documents.signedApplication.name }}</span>
+                </div>
+                <span class="badge badge-success">Attached</span>
+              </div>
+
+              <div class="doc-item mt-2" *ngIf="application.documents.logo">
+                <app-icon name="file-text" [size]="16" color="var(--color-primary)"></app-icon>
+                <div class="flex-1">
+                  <span class="text-xs font-semibold block">Kitchen Logo</span>
+                  <span class="text-xs text-secondary">{{ application.documents.logo.name }}</span>
+                </div>
+                <span class="badge badge-success">Attached</span>
+              </div>
             </div>
           </div>
         </div>

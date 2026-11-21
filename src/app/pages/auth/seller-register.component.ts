@@ -6,7 +6,15 @@ import { AuthService } from '../../services/auth.service';
 import { SellerService } from '../../services/seller.service';
 import { MockDataService } from '../../services/mock-data.service';
 import { SellerApplication } from '../../models';
+import { compressImageToDataUrl } from '../../shared/utils/image.util';
 import { IconComponent } from '../../shared/components/icon.component';
+
+type DocKey = 'logo' | 'governmentId' | 'businessPermit' | 'signedApplication';
+interface DocFile {
+  name: string;
+  url: string;
+  type: string;
+}
 
 @Component({
   selector: 'app-seller-register',
@@ -366,103 +374,59 @@ import { IconComponent } from '../../shared/components/icon.component';
           <!-- STEP 4: Document Uploads & Verification -->
           <div *ngIf="currentStep === 4" class="step-content">
             <div class="step-title-box">
-              <h3>Step 4: Commercial Documents & Permits</h3>
+              <h3>Step 4: Logo & Government Documents</h3>
               <p>
-                Upload government-issued identification and your commercial sanitary/business
-                permit.
+                Upload your kitchen logo and the real documents the administrator needs to verify
+                your business. Photos are shrunk automatically.
               </p>
             </div>
 
-            <!-- Government ID -->
-            <div class="upload-item card">
+            <!-- [APP-DOCS] One card per file: logo, ID, permit, and the government-signed application -->
+            <div class="upload-item card" [class.mt-4]="!first" *ngFor="let slot of docSlots; let first = first">
               <div class="upload-header">
                 <div>
-                  <h4>1. Government-Issued Photo ID</h4>
-                  <p class="text-xs text-secondary">
-                    Driver's License, Passport, or National Identification Card (Max 5MB)
-                  </p>
+                  <h4>{{ slot.title }}</h4>
+                  <p class="text-xs text-secondary">{{ slot.help }}</p>
                 </div>
                 <span
                   class="badge"
-                  [class.badge-success]="step4.governmentId"
-                  [class.badge-neutral]="!step4.governmentId"
+                  [class.badge-success]="step4[slot.key]"
+                  [class.badge-neutral]="!step4[slot.key]"
                 >
-                  {{ step4.governmentId ? 'File Attached' : 'Required' }}
+                  {{ step4[slot.key] ? 'File Attached' : 'Required' }}
                 </span>
               </div>
 
-              <div
-                *ngIf="!step4.governmentId"
-                class="drop-zone"
-                (click)="simulateUpload('governmentId', 'Government_ID_Front.jpg')"
-              >
+              <input
+                #fileInput
+                type="file"
+                hidden
+                [accept]="slot.accept"
+                (change)="onDocSelected($event, slot.key)"
+              />
+
+              <div *ngIf="!step4[slot.key]" class="drop-zone" (click)="fileInput.click()">
                 <app-icon name="upload" [size]="24" color="var(--color-primary)"></app-icon>
-                <span>Click to attach Government ID</span>
-                <small class="text-tertiary">PDF, JPG, or PNG (Demo instant simulation)</small>
+                <span>Click to upload</span>
+                <small class="text-tertiary">{{ slot.formats }}</small>
               </div>
 
-              <div *ngIf="step4.governmentId" class="uploaded-file-row">
+              <div *ngIf="step4[slot.key] as doc" class="uploaded-file-row">
                 <div class="flex items-center gap-2">
-                  <app-icon name="file-text" [size]="18" color="var(--color-primary)"></app-icon>
+                  <img *ngIf="isImage(doc)" [src]="doc.url" class="doc-thumb" alt="" />
+                  <app-icon *ngIf="!isImage(doc)" name="file-text" [size]="18" color="var(--color-primary)"></app-icon>
                   <div>
-                    <strong class="text-xs block">{{ step4.governmentId.name }}</strong>
-                    <span class="text-xs text-secondary">Verified document preview ready</span>
+                    <strong class="text-xs block">{{ doc.name }}</strong>
+                    <span class="text-xs text-secondary">Ready to submit</span>
                   </div>
                 </div>
-                <button
-                  class="btn btn-ghost btn-sm text-danger"
-                  (click)="step4.governmentId = undefined"
-                >
+                <button type="button" class="btn btn-ghost btn-sm text-danger" (click)="removeDoc(slot.key)">
                   <app-icon name="trash" [size]="14"></app-icon>
                   Remove
                 </button>
               </div>
-            </div>
 
-            <!-- Business Permit -->
-            <div class="upload-item card mt-4">
-              <div class="upload-header">
-                <div>
-                  <h4>2. Health Dept. or Commercial Food Permit</h4>
-                  <p class="text-xs text-secondary">
-                    Valid local health inspection or food establishment permit
-                  </p>
-                </div>
-                <span
-                  class="badge"
-                  [class.badge-success]="step4.businessPermit"
-                  [class.badge-neutral]="!step4.businessPermit"
-                >
-                  {{ step4.businessPermit ? 'File Attached' : 'Required' }}
-                </span>
-              </div>
-
-              <div
-                *ngIf="!step4.businessPermit"
-                class="drop-zone"
-                (click)="simulateUpload('businessPermit', 'Commercial_Food_Permit_2026.pdf')"
-              >
-                <app-icon name="upload" [size]="24" color="var(--color-primary)"></app-icon>
-                <span>Click to attach Food Sanitation Permit</span>
-                <small class="text-tertiary">PDF, JPG, or PNG (Demo instant simulation)</small>
-              </div>
-
-              <div *ngIf="step4.businessPermit" class="uploaded-file-row">
-                <div class="flex items-center gap-2">
-                  <app-icon name="file-text" [size]="18" color="var(--color-primary)"></app-icon>
-                  <div>
-                    <strong class="text-xs block">{{ step4.businessPermit.name }}</strong>
-                    <span class="text-xs text-secondary">Commercial food license attached</span>
-                  </div>
-                </div>
-                <button
-                  class="btn btn-ghost btn-sm text-danger"
-                  (click)="step4.businessPermit = undefined"
-                >
-                  <app-icon name="trash" [size]="14"></app-icon>
-                  Remove
-                </button>
-              </div>
+              <small class="text-xs text-danger block mt-2" *ngIf="uploadErrors[slot.key]">{{ uploadErrors[slot.key] }}</small>
             </div>
           </div>
 
@@ -542,6 +506,14 @@ import { IconComponent } from '../../shared/components/icon.component';
                   <span class="val text-success">{{
                     step4.businessPermit?.name || 'Not attached'
                   }}</span>
+                </div>
+                <div class="review-row">
+                  <span class="lbl">Kitchen Logo:</span>
+                  <span class="val text-success">{{ step4.logo?.name || 'Not attached' }}</span>
+                </div>
+                <div class="review-row">
+                  <span class="lbl">Government-Signed Application:</span>
+                  <span class="val text-success">{{ step4.signedApplication?.name || 'Not attached' }}</span>
                 </div>
               </div>
             </div>
@@ -747,6 +719,13 @@ import { IconComponent } from '../../shared/components/icon.component';
       .upload-header h4 {
         font-size: var(--font-size-sm);
       }
+      .doc-thumb {
+        width: 56px;
+        height: 56px;
+        object-fit: cover;
+        border-radius: 8px;
+        border: 1px solid var(--color-border);
+      }
       .uploaded-file-row {
         display: flex;
         justify-content: space-between;
@@ -936,10 +915,40 @@ export class SellerRegisterComponent {
     businessZipCode: '',
   };
 
-  step4: {
-    governmentId?: { name: string; url: string; type: string };
-    businessPermit?: { name: string; url: string; type: string };
-  } = {};
+  // [APP-DOCS] Real uploads. Files are kept inside the application (Firestore limit: 1MB per document).
+  step4: Partial<Record<DocKey, DocFile>> = {};
+  uploadErrors: Partial<Record<DocKey, string>> = {};
+
+  docSlots: { key: DocKey; title: string; help: string; accept: string; formats: string }[] = [
+    {
+      key: 'logo',
+      title: '1. Kitchen Logo',
+      help: 'A clear picture of your logo (square works best). It shows on your kitchen profile.',
+      accept: 'image/*',
+      formats: 'JPG, PNG or WEBP picture',
+    },
+    {
+      key: 'governmentId',
+      title: '2. Government-Issued Photo ID',
+      help: "Driver's License, Passport, or National ID of the owner.",
+      accept: 'image/*,application/pdf',
+      formats: 'Clear photo or scan (JPG, PNG) or a small PDF',
+    },
+    {
+      key: 'businessPermit',
+      title: '3. Health Dept. or Commercial Food Permit',
+      help: 'Valid local health inspection or food establishment permit.',
+      accept: 'image/*,application/pdf',
+      formats: 'Clear photo or scan (JPG, PNG) or a small PDF',
+    },
+    {
+      key: 'signedApplication',
+      title: '4. Business Application Signed by the Government',
+      help: "The real application form for your business (for example the Mayor's / Business Permit application or your DTI / SEC registration) with the government office's signature or stamp.",
+      accept: 'image/*,application/pdf',
+      formats: 'Clear photo or scan (JPG, PNG) or a small PDF',
+    },
+  ];
 
   constructor(
     private authService: AuthService,
@@ -1002,21 +1011,64 @@ export class SellerRegisterComponent {
         return false;
       }
     } else if (this.currentStep === 4) {
-      if (!this.step4.governmentId || !this.step4.businessPermit) {
-        this.errorMessage = 'Please attach both your Government ID and Commercial Food Permit.';
+      if (
+        !this.step4.logo ||
+        !this.step4.governmentId ||
+        !this.step4.businessPermit ||
+        !this.step4.signedApplication
+      ) {
+        this.errorMessage =
+          'Please attach all four files: logo, Government ID, Food Permit, and the application signed by the government.';
         return false;
       }
     }
     return true;
   }
 
-  simulateUpload(type: 'governmentId' | 'businessPermit', filename: string) {
-    this.step4[type] = {
-      name: filename,
-      url: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400',
-      type: 'image/jpeg',
-    };
+  isImage(doc: DocFile): boolean {
+    return doc.type.startsWith('image/');
+  }
+
+  removeDoc(key: DocKey) {
+    this.step4[key] = undefined;
+    this.uploadErrors[key] = '';
+  }
+
+  // [APP-DOCS] Read the chosen file. Pictures are shrunk; PDFs must be small enough to fit.
+  async onDocSelected(event: Event, key: DocKey) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) return;
+    this.uploadErrors[key] = '';
     this.errorMessage = '';
+    try {
+      const isPdf = file.type === 'application/pdf';
+      if (isPdf && key === 'logo') throw new Error('The logo must be a picture (JPG or PNG).');
+      if (!isPdf && !file.type.startsWith('image/')) throw new Error('Please upload a JPG, PNG or PDF file.');
+      let url: string;
+      if (isPdf) {
+        url = await this.readAsDataUrl(file);
+        if (url.length > 230000) {
+          throw new Error('This PDF is too big (max about 170 KB). Upload a clear photo or scan of it instead.');
+        }
+      } else {
+        url = await compressImageToDataUrl(file, key === 'logo' ? 120000 : 230000);
+      }
+      this.step4[key] = { name: file.name, url, type: isPdf ? 'application/pdf' : 'image/jpeg' };
+    } catch (e) {
+      this.uploadErrors[key] = e instanceof Error ? e.message : 'Could not read this file.';
+    }
+    this.cdr.detectChanges();
+  }
+
+  private readAsDataUrl(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = () => reject(new Error('Could not read this file.'));
+      reader.readAsDataURL(file);
+    });
   }
 
   prefillDemoSeller() {
@@ -1047,6 +1099,8 @@ export class SellerRegisterComponent {
       url: 'demo',
       type: 'application/pdf',
     };
+    this.step4.logo = { name: 'apex_logo.png', url: 'demo', type: 'image/png' };
+    this.step4.signedApplication = { name: 'Signed_Business_Application.pdf', url: 'demo', type: 'application/pdf' };
   }
 
   async submitApplication() {
@@ -1100,6 +1154,8 @@ export class SellerRegisterComponent {
         documents: {
           governmentId: this.step4.governmentId,
           businessPermit: this.step4.businessPermit,
+          logo: this.step4.logo,
+          signedApplication: this.step4.signedApplication,
         },
         status: 'pending',
         submittedAt: new Date(),

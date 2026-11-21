@@ -47,6 +47,9 @@ export interface SellerApplication {
   documents: {
     governmentId?: { name: string; url: string; type: string };
     businessPermit?: { name: string; url: string; type: string };
+    /** [APP-DOCS] Business logo (picture) and the application form signed by the government office. */
+    logo?: { name: string; url: string; type: string };
+    signedApplication?: { name: string; url: string; type: string };
     supportingDocs?: { name: string; url: string; type: string }[];
   };
   status: SellerStatus;

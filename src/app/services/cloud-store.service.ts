@@ -209,7 +209,7 @@ export class CloudStoreService {
             'products',
             (docs) =>
               this.mockData.replaceCloudProducts(docs.map((d) => fromPlain<Product>(d.data))),
-            [where('isDisabled', '==', false)],
+            [where('isDisabled', '==', false), where('nutritionStatus', '==', 'verified')], // [NUTRITION-GATE] customers see only meals the admin verified
           ),
           // [ORDERS-FS #3] a customer sees only their own orders
           this.watchCollection(
@@ -276,7 +276,7 @@ export class CloudStoreService {
         this.watchCollection(
           'products',
           (docs) => this.mockData.replaceCloudProducts(docs.map((d) => fromPlain<Product>(d.data))),
-          [where('isDisabled', '==', false)],
+          [where('isDisabled', '==', false), where('nutritionStatus', '==', 'verified')], // [NUTRITION-GATE] customers see only meals the admin verified
         ),
         this.watchReviews(), // [REVIEWS-FS #6] visitors see the stars too
       ]).then(() => undefined),

@@ -160,57 +160,27 @@ import { IconComponent } from '../../shared/components/icon.component';
               </p>
             </div>
 
+            <!-- [APP-DOCS] The real files the seller uploaded -->
             <div class="grid-2 docs-grid">
-              <!-- Document 1: Government ID -->
-              <div class="doc-preview-box card">
-                <div class="flex items-center gap-2 mb-2">
-                  <app-icon name="shield" [size]="18" color="var(--color-primary)"></app-icon>
-                  <strong class="text-xs">Government Photo ID</strong>
-                </div>
-                <div class="doc-file-info">
-                  <span class="filename text-xs font-mono">{{
-                    application.documents.governmentId?.name || 'Government_ID_Front.jpg'
-                  }}</span>
-                  <span class="badge badge-success text-xs mt-1">Verified Format (JPG)</span>
-                </div>
-                <div class="doc-mock-preview">
-                  <div class="mock-id-card">
-                    <app-icon
-                      name="user"
-                      [size]="28"
-                      color="var(--color-text-secondary)"
-                    ></app-icon>
-                    <div class="mock-id-text">
-                      <div class="id-bar"></div>
-                      <div class="id-bar short"></div>
-                      <div class="id-bar"></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Document 2: Food Sanitary Permit -->
-              <div class="doc-preview-box card">
+              <div class="doc-preview-box card" *ngFor="let row of docRows()">
                 <div class="flex items-center gap-2 mb-2">
                   <app-icon name="file-text" [size]="18" color="var(--color-primary)"></app-icon>
-                  <strong class="text-xs">Commercial Food Permit</strong>
+                  <strong class="text-xs">{{ row.label }}</strong>
                 </div>
-                <div class="doc-file-info">
-                  <span class="filename text-xs font-mono">{{
-                    application.documents.businessPermit?.name || 'Sanitation_Permit_2026.pdf'
-                  }}</span>
-                  <span class="badge badge-success text-xs mt-1">Verified Format (PDF)</span>
-                </div>
-                <div class="doc-mock-preview">
-                  <div class="mock-id-card">
-                    <app-icon name="award" [size]="28" color="#D97706"></app-icon>
-                    <div class="mock-id-text">
-                      <div class="id-bar"></div>
-                      <div class="id-bar"></div>
-                      <div class="id-bar short"></div>
-                    </div>
+                <ng-container *ngIf="row.doc as doc; else missingDoc">
+                  <span class="filename text-xs font-mono block">{{ doc.name }}</span>
+                  <div class="real-doc-preview" *ngIf="hasFile(doc) && isImg(doc)">
+                    <img [src]="doc.url" [alt]="row.label" (click)="openDoc(doc)" />
                   </div>
-                </div>
+                  <div class="real-doc-preview pdf" *ngIf="hasFile(doc) && !isImg(doc)">PDF document</div>
+                  <div class="real-doc-preview pdf" *ngIf="!hasFile(doc)">Demo entry (no real file was uploaded)</div>
+                  <button type="button" class="btn btn-outline btn-sm mt-2" *ngIf="hasFile(doc)" (click)="openDoc(doc)">
+                    Open full size &#8599;
+                  </button>
+                </ng-container>
+                <ng-template #missingDoc>
+                  <span class="text-xs text-danger">Not provided</span>
+                </ng-template>
               </div>
             </div>
           </div>
@@ -268,6 +238,26 @@ import { IconComponent } from '../../shared/components/icon.component';
   `,
   styles: [
     `
+      .real-doc-preview {
+        margin-top: 8px;
+        border: 1px solid var(--color-border);
+        border-radius: 8px;
+        overflow: hidden;
+        background: var(--color-bg-secondary);
+      }
+      .real-doc-preview img {
+        display: block;
+        width: 100%;
+        max-height: 220px;
+        object-fit: contain;
+        cursor: zoom-in;
+      }
+      .real-doc-preview.pdf {
+        padding: 18px;
+        text-align: center;
+        font-size: 12px;
+        color: var(--color-text-secondary);
+      }
       .admin-layout {
         display: flex;
         min-height: 100vh;
@@ -392,6 +382,37 @@ import { IconComponent } from '../../shared/components/icon.component';
 })
 export class AdminApplicationDetailComponent implements OnInit {
   application: SellerApplication | undefined;
+
+  // [APP-DOCS] the files the seller uploaded, for the viewer
+  docRows(): { label: string; doc?: { name: string; url: string; type: string } }[] {
+    const d = this.application?.documents;
+    return [
+      { label: 'Kitchen Logo', doc: d?.logo },
+      { label: 'Government Photo ID', doc: d?.governmentId },
+      { label: 'Commercial Food Permit', doc: d?.businessPermit },
+      { label: 'Business Application Signed by the Government', doc: d?.signedApplication },
+    ];
+  }
+
+  isImg(doc: { type: string }): boolean {
+    return doc.type.startsWith('image/');
+  }
+
+  /** Older or demo entries have no real file. */
+  hasFile(doc: { url: string }): boolean {
+    return doc.url.startsWith('data:') || doc.url.startsWith('http');
+  }
+
+  /** Browsers block data: links, so the file is turned into a temporary link first. */
+  async openDoc(doc: { url: string }) {
+    if (!doc.url.startsWith('data:')) {
+      window.open(doc.url, '_blank', 'noopener');
+      return;
+    }
+    const blob = await (await fetch(doc.url)).blob();
+    window.open(URL.createObjectURL(blob), '_blank', 'noopener');
+  }
+
   showActionModal = false;
   modalAction: 'rejected' | 'info_required' = 'rejected';
   modalReason = '';

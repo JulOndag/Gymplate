@@ -26,6 +26,7 @@ import { CloudStoreService } from '../../services/cloud-store.service';
             <div class="dash-hero-text">
               <h1>{{ greet }}, {{ adminName() }}</h1>
               <p>Here is how the GymPlate marketplace is doing today.</p>
+              <div class="dash-hero-actions"></div>
             </div>
             <img class="dash-hero-img" *ngIf="heroImage" [src]="heroImage" alt="" />
           </section>

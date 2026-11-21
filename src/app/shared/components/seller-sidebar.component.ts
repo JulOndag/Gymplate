@@ -293,7 +293,10 @@ export class SellerSidebarComponent implements OnInit, OnDestroy {
   }
 
   userPhoto(): string {
-    return this.authService.user()?.avatarUrl || '';
+    const user = this.authService.user();
+    if (!user) return '';
+    // [PROFILE-PHOTO] their own picture first; otherwise the kitchen logo from the application
+    return user.avatarUrl || this.sellerService.getKitchenLogo(user.id);
   }
 
   private noticeCache: PortalNotice[] = [];
@@ -336,8 +339,8 @@ export class SellerSidebarComponent implements OnInit, OnDestroy {
   businessName(): string {
     const user = this.authService.user();
     if (!user) return 'Seller Kitchen';
-    const biz = this.sellerService.getBusiness(user.id);
-    return biz ? biz.businessName : 'Kitchen Portal';
+    // [PROFILE-PHOTO] works before approval too (the name written in the application)
+    return this.sellerService.getKitchenName(user.id) || 'Kitchen Portal';
   }
 
   sellerStatus(): string {

@@ -103,6 +103,16 @@ import { PORTAL_SIDEBAR_STYLES } from './portal-sidebar.styles';
         </a>
 
         <a
+          routerLink="/admin/customers"
+          routerLinkActive="active"
+          (click)="closeMobileDrawer()"
+          [title]="'Customers'"
+        >
+          <app-icon name="users" [size]="18"></app-icon>
+          <span class="link-label" *ngIf="!isCollapsed()">Customers</span>
+        </a>
+
+        <a
           routerLink="/admin/products"
           routerLinkActive="active"
           (click)="closeMobileDrawer()"

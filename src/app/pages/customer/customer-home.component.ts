@@ -19,15 +19,15 @@ import { greeting } from '../../shared/utils/dashboard.util';
   template: `
     <app-customer-nav></app-customer-nav>
 
+    <!-- [STAY-ON-MEALS] small message after adding a meal -->
     <div
       *ngIf="cartNotice"
       style="position:fixed;top:76px;left:50%;transform:translateX(-50%);z-index:500;background:#1e432e;color:#fff;padding:10px 18px;border-radius:10px;font-size:13px;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.2)"
     >
       {{ cartNotice }}
-      <a
-        routerLink="/customer/cart"
-        style="color:#fff;text-decoration:underline;margin-left:10px"
-      ></a>
+      <a routerLink="/customer/cart" style="color:#fff;text-decoration:underline;margin-left:10px"
+        >View cart</a
+      >
     </div>
 
     <main class="page-content customer-dashboard">
@@ -459,6 +459,7 @@ export class CustomerHomeComponent implements OnInit {
   addToCart(product: Product) {
     const res = this.cartService.addItem(product, 1);
     if (res.success) {
+      // [STAY-ON-MEALS] The meal goes into the cart, but the screen stays here.
       this.cartNotice = `Added ${product.name} to cart.`;
       setTimeout(() => (this.cartNotice = ''), 3000);
     } else {

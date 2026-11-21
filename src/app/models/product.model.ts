@@ -25,6 +25,12 @@ export interface Product {
   archivedAt?: Date;
   rating?: number;
   reviewCount?: number;
+  /** [NUTRITION-REVIEW] Link where the seller got the nutrition numbers (brand site, USDA, label page...). */
+  nutritionSourceUrl?: string;
+  /** 'pending' until an admin checks the numbers against the link. Editing the numbers or link sets it back to 'pending'. */
+  nutritionStatus?: 'pending' | 'verified' | 'rejected';
+  nutritionReviewNote?: string;
+  nutritionReviewedAt?: Date | string;
   createdAt: Date;
   updatedAt: Date;
 }

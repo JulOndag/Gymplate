@@ -112,7 +112,8 @@ import { IconComponent } from './icon.component';
           <div class="dropdown-wrapper desktop-only">
             <button class="user-btn" (click)="toggleUserMenu()">
               <div class="avatar-circle">
-                {{ userInitials() }}
+                <img *ngIf="userPhoto()" [src]="userPhoto()" alt="" class="avatar-img" />
+                <span *ngIf="!userPhoto()">{{ userInitials() }}</span>
               </div>
               <span class="desktop-name">{{ userFirstName() }}</span>
               <app-icon name="chevron-down" [size]="14"></app-icon>
@@ -283,7 +284,13 @@ import { IconComponent } from './icon.component';
         color: var(--color-text);
         font-size: var(--font-size-sm);
       }
+      .avatar-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
       .avatar-circle {
+        overflow: hidden;
         width: 28px;
         height: 28px;
         border-radius: 50%;
@@ -487,6 +494,10 @@ export class CustomerNavComponent {
 
   userEmail(): string {
     return this.authService.user()?.email || '';
+  }
+
+  userPhoto(): string {
+    return this.authService.user()?.avatarUrl || '';
   }
 
   userInitials(): string {

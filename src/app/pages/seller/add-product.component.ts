@@ -235,6 +235,24 @@ import { compressImageToDataUrl } from '../../shared/utils/image.util'; // [PROD
                 </div>
               </div>
 
+              <!-- [NUTRITION-REVIEW] Reference link so the admin can check the numbers -->
+              <div class="form-group mt-4">
+                <label class="form-label" for="nutritionSource">Nutrition Reference Link <span class="text-danger">*</span></label>
+                <input
+                  id="nutritionSource"
+                  type="url"
+                  class="form-control"
+                  placeholder="https://... (brand page, USDA FoodData Central, label photo page)"
+                  [(ngModel)]="product.nutritionSourceUrl"
+                  name="nutritionSourceUrl"
+                  required
+                />
+                <small class="text-xs text-secondary">
+                  The admin opens this link to check your protein, carbs, fat and calories before the numbers are marked "Verified".
+                </small>
+                <small class="text-xs text-danger block" *ngIf="sourceError">{{ sourceError }}</small>
+              </div>
+
               <!-- Stock & Availability -->
               <div class="section-divider mt-6">
                 <span class="sec-title">4. Initial Stock & Status</span>
@@ -508,9 +526,12 @@ export class AddProductComponent implements OnInit {
     stock: 25,
     isAvailable: true,
     isDisabled: false,
+    nutritionSourceUrl: '',
+    nutritionStatus: 'pending',
     createdAt: new Date(),
     updatedAt: new Date()
   };
+  sourceError = '';
 
   constructor(
     private authService: AuthService,
@@ -617,6 +638,15 @@ export class AddProductComponent implements OnInit {
       alert('Your business profile is not ready yet. Please refresh the page and try again.');
       return;
     }
+
+    // [NUTRITION-REVIEW] a reference link is required so the admin can verify the numbers
+    this.sourceError = '';
+    this.product.nutritionSourceUrl = (this.product.nutritionSourceUrl || '').trim();
+    if (!/^https?:\/\/\S+\.\S+/i.test(this.product.nutritionSourceUrl)) {
+      this.sourceError = 'Enter a valid link that starts with https:// where the nutrition numbers can be checked.';
+      return;
+    }
+    this.product.nutritionStatus = 'pending';
 
     this.isSaving = true;
     this.product.id = 'prod-' + Date.now();

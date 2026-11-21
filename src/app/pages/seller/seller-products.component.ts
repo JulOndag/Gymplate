@@ -77,7 +77,12 @@ import { CloudStoreService } from '../../services/cloud-store.service';
 
           <!-- Active / Archived switch -->
           <div class="view-tabs mb-4" role="tablist">
-            <button type="button" role="tab" [class.active]="!showArchived" (click)="setView(false)">
+            <button
+              type="button"
+              role="tab"
+              [class.active]="!showArchived"
+              (click)="setView(false)"
+            >
               Active ({{ activeCount }})
             </button>
             <button type="button" role="tab" [class.active]="showArchived" (click)="setView(true)">
@@ -111,6 +116,27 @@ import { CloudStoreService } from '../../services/cloud-store.service';
                             <span class="meal-price">{{
                               p.price | currency: 'PHP' : 'symbol'
                             }}</span>
+                            <span
+                              class="badge"
+                              [class.badge-success]="p.nutritionStatus === 'verified'"
+                              [class.badge-danger]="p.nutritionStatus === 'rejected'"
+                              [class.badge-warning]="
+                                p.nutritionStatus !== 'verified' && p.nutritionStatus !== 'rejected'
+                              "
+                              [title]="
+                                p.nutritionStatus === 'verified'
+                                  ? 'Customers can see and order this meal'
+                                  : 'Hidden from customers until the admin verifies the nutrition'
+                              "
+                            >
+                              {{
+                                p.nutritionStatus === 'verified'
+                                  ? 'Approved'
+                                  : p.nutritionStatus === 'rejected'
+                                    ? 'Nutrition rejected'
+                                    : 'Pending admin review'
+                              }}
+                            </span>
                             <span class="moderation-alert text-xs text-danger" *ngIf="p.isDisabled">
                               &bull; Disabled by Admin ({{ p.disableReason || 'Compliance' }})
                             </span>
@@ -208,10 +234,32 @@ import { CloudStoreService } from '../../services/cloud-store.service';
   `,
   styles: [
     `
-      .view-tabs { display: inline-flex; gap: 4px; padding: 4px; background: var(--color-bg-tertiary); border-radius: var(--radius-md); }
-      .view-tabs button { border: none; background: none; padding: 6px 14px; font-size: var(--font-size-xs); font-weight: 600; color: var(--color-text-secondary); border-radius: var(--radius); cursor: pointer; }
-      .view-tabs button.active { background: var(--color-surface); color: var(--color-primary); box-shadow: var(--shadow-sm); }
-      .view-tabs button:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 1px; }
+      .view-tabs {
+        display: inline-flex;
+        gap: 4px;
+        padding: 4px;
+        background: var(--color-bg-tertiary);
+        border-radius: var(--radius-md);
+      }
+      .view-tabs button {
+        border: none;
+        background: none;
+        padding: 6px 14px;
+        font-size: var(--font-size-xs);
+        font-weight: 600;
+        color: var(--color-text-secondary);
+        border-radius: var(--radius);
+        cursor: pointer;
+      }
+      .view-tabs button.active {
+        background: var(--color-surface);
+        color: var(--color-primary);
+        box-shadow: var(--shadow-sm);
+      }
+      .view-tabs button:focus-visible {
+        outline: 2px solid var(--color-accent);
+        outline-offset: 1px;
+      }
       .seller-layout {
         display: flex;
         min-height: 100vh;
@@ -461,19 +509,30 @@ export class SellerProductsComponent implements OnInit {
   }
 
   async archiveProduct(product: Product) {
-    if (!confirm(`Archive "${product.name}"? Customers will no longer see it. You can restore it anytime from the Archived tab.`)) return;
+    if (
+      !confirm(
+        `Archive "${product.name}"? Customers will no longer see it. You can restore it anytime from the Archived tab.`,
+      )
+    )
+      return;
     const ok = await this.productService.archiveProduct(product.id);
-    if (!ok) alert(this.cloud.lastErrorCode === 'permission-denied'
-      ? 'Firestore blocked this change. Publish the updated firestore.rules in the Firebase Console, then try again.'
-      : 'Could not archive this meal. Please try again.');
+    if (!ok)
+      alert(
+        this.cloud.lastErrorCode === 'permission-denied'
+          ? 'Firestore blocked this change. Publish the updated firestore.rules in the Firebase Console, then try again.'
+          : 'Could not archive this meal. Please try again.',
+      );
     this.loadProducts();
   }
 
   async restoreProduct(product: Product) {
     const ok = await this.productService.restoreProduct(product.id);
-    if (!ok) alert(this.cloud.lastErrorCode === 'permission-denied'
-      ? 'Firestore blocked this change. Publish the updated firestore.rules in the Firebase Console, then try again.'
-      : 'Could not restore this meal. Please try again.');
+    if (!ok)
+      alert(
+        this.cloud.lastErrorCode === 'permission-denied'
+          ? 'Firestore blocked this change. Publish the updated firestore.rules in the Firebase Console, then try again.'
+          : 'Could not restore this meal. Please try again.',
+      );
     this.loadProducts();
   }
 }

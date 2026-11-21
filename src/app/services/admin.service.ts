@@ -49,6 +49,41 @@ export class AdminService {
     return true;
   }
 
+  /** [NUTRITION-REVIEW] The admin checks the seller's numbers against the reference link. */
+  async reviewNutrition(
+    productId: string,
+    adminId: string,
+    status: 'verified' | 'rejected',
+    note: string
+  ): Promise<boolean> {
+    const product = this.mockData.getProduct(productId);
+    if (!product) return false;
+    const updated = {
+      ...product,
+      nutritionStatus: status,
+      nutritionReviewNote: note,
+      nutritionReviewedAt: new Date().toISOString(),
+      updatedAt: new Date()
+    };
+    if (!(await this.cloud.saveProduct(updated))) return false;
+    this.mockData.upsertProduct(updated);
+    this.logActivity(adminId, status === 'verified' ? 'Verified nutrition' : 'Rejected nutrition', 'product', productId,
+      `${status === 'verified' ? 'Verified' : 'Rejected'} nutrition of "${product.name}"`, note);
+    this.mockData.addNotification({
+      id: 'notif-' + Date.now() + '-nut',
+      userId: product.sellerId,
+      type: 'system',
+      title: status === 'verified' ? 'Nutrition Verified' : 'Nutrition Rejected',
+      message: status === 'verified'
+        ? `The admin verified the nutrition facts of "${product.name}".`
+        : `The admin rejected the nutrition facts of "${product.name}": ${note}`,
+      isRead: false,
+      link: '/seller/products',
+      createdAt: new Date()
+    });
+    return true;
+  }
+
   async archiveProduct(productId: string, adminId: string): Promise<boolean> {
     const product = this.mockData.getProduct(productId);
     if (!product) return false;

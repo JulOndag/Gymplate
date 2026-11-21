@@ -4,11 +4,13 @@ import { FormsModule } from '@angular/forms';
 import { MockDataService } from '../../services/mock-data.service';
 import { AdminSidebarComponent } from '../../shared/components/admin-sidebar.component';
 import { IconComponent } from '../../shared/components/icon.component';
+import { ProfilePhotoComponent } from '../../shared/components/profile-photo.component';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-admin-settings',
   standalone: true,
-  imports: [CommonModule, FormsModule, AdminSidebarComponent, IconComponent],
+  imports: [CommonModule, FormsModule, AdminSidebarComponent, IconComponent, ProfilePhotoComponent],
   template: `
     <div class="admin-layout">
       <app-admin-sidebar></app-admin-sidebar>
@@ -27,6 +29,15 @@ import { IconComponent } from '../../shared/components/icon.component';
           <div class="alert alert-success mb-4" *ngIf="successMessage">
             <app-icon name="check-circle" [size]="16"></app-icon>
             <span>{{ successMessage }}</span>
+          </div>
+
+          <!-- [PROFILE-PHOTO] the admin can add any profile picture -->
+          <div class="card form-card mb-6">
+            <h3>Your Profile</h3>
+            <div class="mt-4">
+              <app-profile-photo></app-profile-photo>
+            </div>
+            <p class="text-xs text-secondary mt-3">{{ adminName() }} &bull; {{ adminEmail() }}</p>
           </div>
 
           <!-- Configuration Form Card -->
@@ -301,7 +312,16 @@ export class AdminSettingsComponent {
   autoMacroValidation = true;
   successMessage = '';
 
-  constructor(private mockData: MockDataService) {}
+  constructor(private mockData: MockDataService, private auth: AuthService) {}
+
+  adminName(): string {
+    const u = this.auth.user();
+    return u ? `${u.firstName} ${u.lastName}` : '';
+  }
+
+  adminEmail(): string {
+    return this.auth.user()?.email || '';
+  }
 
   saveSettings() {
     this.successMessage = 'System parameters updated successfully.';
