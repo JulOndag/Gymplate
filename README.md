@@ -1,9 +1,5 @@
 # GymPlate: Nutrition-Based Food Ordering System for Fitness-Focused Individuals
 
-**Course:** IT311 – Information Assurance and Security | **Section:** BSIT3A | **Instructor:** Norvilyn Malingin | **Term:** September 2026
-
-**Team:** Aragua, Jaykent S. · Moreno, Shahanna Mae M. · Ondag, Juliet P. · Sacuan, Azryth A. · Silagan, James Leonard G. · Yabut, John Mark C.
-
 ## 1. About
 
 GymPlate is a web app for ordering food with the **calories, protein, carbs, and fats** shown for every meal. Customers browse, filter, order, and track meals; sellers manage their menu and orders; an administrator approves sellers and monitors the system.
