@@ -18,7 +18,7 @@ import { CloudStoreService } from '../../services/cloud-store.service';
   template: `
     <app-customer-nav></app-customer-nav>
 
-    <main class="page-content product-page" *ngIf="product">
+    <main class="page-content customer-ui product-page" *ngIf="product">
       <div class="container container-narrow">
         <!-- Back Navigation -->
         <a routerLink="/customer/explore" class="back-btn"><app-icon name="arrow-left" [size]="14"></app-icon> Back to marketplace</a>

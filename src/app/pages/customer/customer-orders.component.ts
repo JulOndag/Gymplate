@@ -32,7 +32,7 @@ import { IconComponent } from '../../shared/components/icon.component';
   template: `
     <app-customer-nav></app-customer-nav>
 
-    <main class="page-content orders-page">
+    <main class="page-content customer-ui orders-page">
       <div class="container container-narrow">
         <div class="page-header flex justify-between items-center flex-wrap gap-4">
           <div>

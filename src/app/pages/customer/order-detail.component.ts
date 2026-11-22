@@ -33,7 +33,7 @@ import { OrderProgressComponent } from '../../shared/components/order-progress.c
   template: `
     <app-customer-nav></app-customer-nav>
 
-    <main class="page-content order-detail-page" *ngIf="order">
+    <main class="page-content customer-ui order-detail-page" *ngIf="order">
       <div class="container container-narrow">
         <!-- New Order Alert Banner if just redirected -->
         <div class="alert alert-success mb-4" *ngIf="isNewlyPlaced">
@@ -59,12 +59,12 @@ import { OrderProgressComponent } from '../../shared/components/order-progress.c
             </p>
           </div>
           <div class="flex gap-2">
-            <button class="btn btn-secondary btn-sm" (click)="isReceiptOpen = true">
-              <app-icon name="receipt" [size]="14"></app-icon>
+            <button class="btn btn-secondary" (click)="isReceiptOpen = true">
+              <app-icon name="receipt" [size]="16"></app-icon>
               View receipt
             </button>
-            <button class="btn btn-danger btn-sm" *ngIf="canCancel()" (click)="cancelOrder()">
-              <app-icon name="x-circle" [size]="14"></app-icon>
+            <button class="btn btn-outline-danger" *ngIf="canCancel()" (click)="cancelOrder()">
+              <app-icon name="x-circle" [size]="16"></app-icon>
               Cancel order
             </button>
           </div>
@@ -317,7 +317,7 @@ import { OrderProgressComponent } from '../../shared/components/order-progress.c
               <h3>Fulfillment & Handover</h3>
               <div class="info-block">
                 <span class="lbl">Fulfillment Type:</span>
-                <span class="val font-semibold capitalize">{{ order.fulfillmentType }}</span>
+                <span class="val font-semibold">{{ order.fulfillmentType === 'pickup' ? 'Self pickup' : 'Delivery' }}</span>
               </div>
               <div class="info-block" *ngIf="order.fulfillmentType === 'delivery'">
                 <span class="lbl">Delivery Address:</span>

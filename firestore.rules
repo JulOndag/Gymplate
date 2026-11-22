@@ -194,6 +194,19 @@ service cloud.firestore {
         || (from == 'delivered' && to == 'completed');
     }
 
+    // [ORDER-NO] one shared counter so order numbers run 1, 2, 3 ... for everybody.
+    // A customer can only raise it by exactly 1.
+    match /counters/orders {
+      allow read: if signedIn();
+      allow create: if isCustomer()
+        && request.resource.data.keys().hasOnly(['last'])
+        && request.resource.data.last == 1;
+      allow update: if isCustomer()
+        && request.resource.data.keys().hasOnly(['last'])
+        && request.resource.data.last == resource.data.last + 1;
+      allow delete: if false;
+    }
+
     match /orders/{orderId} {
 
       allow read: if signedIn()

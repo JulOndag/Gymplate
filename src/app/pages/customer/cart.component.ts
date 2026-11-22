@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { CartService } from '../../services/cart.service';
+import { SellerService } from '../../services/seller.service';
 import { CustomerNavComponent } from '../../shared/components/customer-nav.component';
 import { PublicFooterComponent } from '../../shared/components/public-footer.component';
 import { IconComponent } from '../../shared/components/icon.component';
@@ -13,7 +14,7 @@ import { IconComponent } from '../../shared/components/icon.component';
   template: `
     <app-customer-nav></app-customer-nav>
 
-    <main class="page-content cart-page">
+    <main class="page-content customer-ui cart-page">
       <div class="container container-narrow">
         <div class="page-header mb-6">
           <h1>Your Meal Cart</h1>
@@ -74,12 +75,12 @@ import { IconComponent } from '../../shared/components/icon.component';
                     </button>
                   </div>
 
-                  <span class="unit-price text-xs text-secondary"
-                    >&#64; {{ item.product.price | currency: 'PHP' : 'symbol' }} each</span
+                  <span class="unit-price"
+                    >{{ item.product.price | currency: 'PHP' : 'symbol' }} each</span
                   >
 
                   <button
-                    class="btn btn-ghost btn-sm remove-btn text-danger"
+                    class="btn btn-ghost btn-sm remove-btn"
                     (click)="removeItem(item.productId)"
                   >
                     <app-icon name="trash" [size]="14"></app-icon>
@@ -250,18 +251,32 @@ import { IconComponent } from '../../shared/components/icon.component';
       .item-controls-row {
         display: flex;
         align-items: center;
+        flex-wrap: wrap;
         gap: var(--space-3);
         margin-top: auto;
+      }
+      .unit-price {
+        font-size: 12px;
+        color: var(--color-text-secondary);
+        white-space: nowrap;
+      }
+      .remove-btn {
+        color: var(--color-danger) !important;
+      }
+      .remove-btn:hover {
+        background: var(--color-danger-bg) !important;
       }
       .qty-stepper {
         display: flex;
         align-items: center;
         border: 1px solid var(--color-border);
-        border-radius: var(--radius-sm);
+        border-radius: 9px;
+        background: #fff;
+        overflow: hidden;
       }
       .stepper-btn {
-        width: 26px;
-        height: 26px;
+        width: 34px;
+        height: 34px;
         background: none;
         border: none;
         cursor: pointer;
@@ -270,7 +285,7 @@ import { IconComponent } from '../../shared/components/icon.component';
         justify-content: center;
       }
       .qty-display {
-        font-size: 12px;
+        font-size: 14px;
         font-weight: 700;
         min-width: 24px;
         text-align: center;
@@ -360,10 +375,17 @@ import { IconComponent } from '../../shared/components/icon.component';
   ],
 })
 export class CartComponent {
-  constructor(public cartService: CartService) {}
+  constructor(
+    public cartService: CartService,
+    private sellerService: SellerService,
+  ) {}
 
   currentKitchenName(): string {
-    return this.cartService.currentBusinessName() || 'FitFuel Kitchen';
+    // [CART-FIX] show the kitchen's real name, never the raw "biz-..." id
+    const saved = this.cartService.currentBusinessName();
+    if (saved && !saved.startsWith('biz-')) return saved;
+    const id = this.cartService.currentSellerId();
+    return (id && this.sellerService.getKitchenName(id)) || 'your kitchen';
   }
 
   updateQuantity(productId: string, quantity: number) {

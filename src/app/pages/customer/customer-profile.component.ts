@@ -15,7 +15,7 @@ import { ProfilePhotoComponent } from '../../shared/components/profile-photo.com
   template: `
     <app-customer-nav></app-customer-nav>
 
-    <main class="page-content profile-page">
+    <main class="page-content customer-ui profile-page">
       <div class="container container-narrow">
         <div class="page-header mb-6">
           <h1>Account Profile</h1>

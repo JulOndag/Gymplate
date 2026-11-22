@@ -16,7 +16,7 @@ import { IconComponent } from '../../shared/components/icon.component';
   template: `
     <app-customer-nav></app-customer-nav>
 
-    <main class="page-content nutrition-page">
+    <main class="page-content customer-ui nutrition-page">
       <div class="container container-narrow">
         <div class="page-header mb-6">
           <div class="flex items-center gap-2 mb-1">
