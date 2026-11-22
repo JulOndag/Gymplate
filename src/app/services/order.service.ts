@@ -162,10 +162,18 @@ export class OrderService {
   }
 
   /** Hide / show a finished order in the seller's or admin's own lists. The customer is not affected. */
-  async setArchived(order: Order, by: 'seller' | 'admin' | 'customer', value: boolean): Promise<boolean> {
+  async setArchived(
+    order: Order,
+    by: 'seller' | 'admin' | 'customer',
+    value: boolean,
+  ): Promise<boolean> {
     if (value && !this.canArchive(order)) return false;
     const key =
-      by === 'seller' ? 'archivedBySeller' : by === 'customer' ? 'archivedByCustomer' : 'archivedByAdmin';
+      by === 'seller'
+        ? 'archivedBySeller'
+        : by === 'customer'
+          ? 'archivedByCustomer'
+          : 'archivedByAdmin';
     this.mockData.updateOrder({ ...order, [key]: value });
     this.cloud.notifyChange();
     const ok = await this.cloud.setOrderArchived(order.id, key, value);
@@ -373,9 +381,15 @@ export class OrderService {
    * so counting orders (the old way) would give every customer the same "001".
    * This uses the clock instead, for example GP-2026-K3F9QZ.
    */
+  // Temporary value only: the real running number (GP-0001, GP-0002 ...) is set when the order is saved.
   private generateOrderNumber(): string {
-    const year = new Date().getFullYear();
-    const code = Date.now().toString(36).toUpperCase().slice(-6);
-    return `GP-${year}-${code}`;
+    // [ORDER-NO] easy to read out loud: GP-<date>-<4 characters>, e.g. GP-20261122-7KQ4
+    // (no 0/O or 1/I so nobody mixes them up; the order's real id stays unique on its own)
+    const d = new Date();
+    const date = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
+    const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let code = '';
+    for (let i = 0; i < 4; i++) code += letters[Math.floor(Math.random() * letters.length)];
+    return `GP-${date}-${code}`;
   }
 }

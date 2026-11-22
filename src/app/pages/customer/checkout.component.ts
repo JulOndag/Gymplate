@@ -29,7 +29,9 @@ import { IconComponent } from '../../shared/components/icon.component';
       <div class="container container-narrow">
         <div class="page-header mb-6">
           <div class="flex items-center gap-2 mb-1">
-            <a routerLink="/customer/cart" class="back-btn"><app-icon name="arrow-left" [size]="14"></app-icon> Back to cart</a>
+            <a routerLink="/customer/cart" class="back-btn"
+              ><app-icon name="arrow-left" [size]="14"></app-icon> Back to cart</a
+            >
           </div>
           <h1>Fulfillment & Checkout</h1>
           <p>
@@ -68,7 +70,7 @@ import { IconComponent } from '../../shared/components/icon.component';
                     <strong>Self Pickup</strong>
                     <span>Direct pickup at kitchen counter</span>
                     <small class="text-success font-semibold mt-1"
-                      >Free &bull; Ready in ~25 mins</small
+                      >Free &bull; Kitchen sets your ready time</small
                     >
                   </div>
                 </label>
@@ -186,8 +188,8 @@ import { IconComponent } from '../../shared/components/icon.component';
               <div class="demo-payment-warning mt-3" *ngIf="paymentMethod === 'ewallet'">
                 <app-icon name="info" [size]="16" color="var(--color-primary)"></app-icon>
                 <span
-                  >Demo e-wallet: no real money moves and no wallet account is connected. The order is
-                  saved as "payment pending", and the kitchen marks it paid when the order is
+                  >Demo e-wallet: no real money moves and no wallet account is connected. The order
+                  is saved as "payment pending", and the kitchen marks it paid when the order is
                   completed.</span
                 >
               </div>
@@ -271,9 +273,11 @@ import { IconComponent } from '../../shared/components/icon.component';
               </button>
 
               <p class="notice-text">
-                {{ paymentMethod === 'ewallet'
-                  ? 'By placing this order you agree to pay through your e-wallet (demo).'
-                  : 'By placing this order you commit to fulfill the cash payment upon meal collection.' }}
+                {{
+                  paymentMethod === 'ewallet'
+                    ? 'By placing this order you agree to pay through your e-wallet (demo).'
+                    : 'By placing this order you commit to fulfill the cash payment upon meal collection.'
+                }}
                 An official printable receipt will be generated.
               </p>
             </div>
@@ -542,7 +546,10 @@ export class CheckoutComponent implements OnInit {
         });
       } catch (e) {
         console.error('createOrder failed:', e);
-        res = { success: false, message: 'Something went wrong while placing the order. Please try again.' };
+        res = {
+          success: false,
+          message: 'Something went wrong while placing the order. Please try again.',
+        };
       }
 
       this.isSubmitting = false;

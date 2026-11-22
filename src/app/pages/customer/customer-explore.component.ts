@@ -25,20 +25,13 @@ import { CloudStoreService } from '../../services/cloud-store.service';
   template: `
     <app-customer-nav></app-customer-nav>
 
-    <main class="page-content explore-page">
+    <main class="page-content customer-ui explore-page">
       <div class="container">
         <!-- Header -->
         <div class="page-header flex justify-between items-center flex-wrap gap-4">
           <div>
             <h1>Explore Fitness Meals</h1>
             <p>Every menu item displays exact macronutrient counts calculated per serving size.</p>
-          </div>
-          <div class="cart-quick-link" *ngIf="cartCount() > 0">
-            <a routerLink="/customer/cart" class="btn btn-primary btn-sm">
-              <app-icon name="shopping-bag" [size]="16"></app-icon>
-              View Cart ({{ cartCount() }} items &bull;
-              {{ cartSubtotal() | currency: 'PHP' : 'symbol' }})
-            </a>
           </div>
         </div>
 
@@ -485,7 +478,7 @@ import { CloudStoreService } from '../../services/cloud-store.service';
         font-size: var(--font-size-xs);
         color: var(--color-text-secondary);
         line-height: 1.5;
-        min-height: calc(var(--font-size-xs) * 1.5 * 2); /* [CARD-ALIGN] always 2 lines tall */
+        min-height: calc(var(--font-size-xs) * 1.5 * 2);
         margin-bottom: var(--space-4);
         display: -webkit-box;
         -webkit-line-clamp: 2;

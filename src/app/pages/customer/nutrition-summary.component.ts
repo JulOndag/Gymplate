@@ -24,7 +24,13 @@ import { IconComponent } from '../../shared/components/icon.component';
             <span class="text-xs font-bold uppercase text-primary">Macronutrient Intelligence</span>
           </div>
           <h1>GymPlate Nutrition Summary</h1>
-          <p>Real-time aggregation of calories, protein, carbs, and fat strictly calculated from your GymPlate orders.</p>
+          <p>
+            Calculated from the meals you actually received. Orders still being prepared are not
+            counted yet.
+          </p>
+          <p class="text-xs text-secondary mt-1" *ngIf="inProgressCount > 0">
+            {{ inProgressCount }} order(s) still in progress will be added once completed.
+          </p>
         </div>
 
         <!-- Date Range Filter Tabs -->
@@ -62,7 +68,9 @@ import { IconComponent } from '../../shared/components/icon.component';
         <!-- Macro Stats Dashboard -->
         <div class="macro-stats-grid mb-6">
           <div class="stat-card card highlight-card">
-            <span class="stat-icon"><app-icon name="target" [size]="18" color="var(--color-primary)"></app-icon></span>
+            <span class="stat-icon"
+              ><app-icon name="target" [size]="18" color="var(--color-primary)"></app-icon
+            ></span>
             <span class="stat-lbl">Total Protein</span>
             <div class="stat-val-group">
               <span class="stat-num text-primary">{{ totals.protein }}</span>
@@ -72,7 +80,9 @@ import { IconComponent } from '../../shared/components/icon.component';
           </div>
 
           <div class="stat-card card">
-            <span class="stat-icon"><app-icon name="zap" [size]="18" color="var(--color-primary)"></app-icon></span>
+            <span class="stat-icon"
+              ><app-icon name="zap" [size]="18" color="var(--color-primary)"></app-icon
+            ></span>
             <span class="stat-lbl">Total Calories</span>
             <div class="stat-val-group">
               <span class="stat-num">{{ totals.calories }}</span>
@@ -82,7 +92,9 @@ import { IconComponent } from '../../shared/components/icon.component';
           </div>
 
           <div class="stat-card card">
-            <span class="stat-icon"><app-icon name="layers" [size]="18" color="var(--color-primary)"></app-icon></span>
+            <span class="stat-icon"
+              ><app-icon name="layers" [size]="18" color="var(--color-primary)"></app-icon
+            ></span>
             <span class="stat-lbl">Carbohydrates</span>
             <div class="stat-val-group">
               <span class="stat-num">{{ totals.carbs }}</span>
@@ -92,7 +104,9 @@ import { IconComponent } from '../../shared/components/icon.component';
           </div>
 
           <div class="stat-card card">
-            <span class="stat-icon"><app-icon name="heart" [size]="18" color="var(--color-primary)"></app-icon></span>
+            <span class="stat-icon"
+              ><app-icon name="heart" [size]="18" color="var(--color-primary)"></app-icon
+            ></span>
             <span class="stat-lbl">Dietary Fat</span>
             <div class="stat-val-group">
               <span class="stat-num">{{ totals.fat }}</span>
@@ -109,22 +123,34 @@ import { IconComponent } from '../../shared/components/icon.component';
             <span class="text-xs text-secondary">{{ timeframeLabel() }}</span>
           </div>
           <div class="ratio-bar">
-            <div class="segment protein-seg" [style.width.%]="getMacroPercentage('protein')" title="Protein"></div>
-            <div class="segment carbs-seg" [style.width.%]="getMacroPercentage('carbs')" title="Carbohydrates"></div>
-            <div class="segment fat-seg" [style.width.%]="getMacroPercentage('fat')" title="Fats"></div>
+            <div
+              class="segment protein-seg"
+              [style.width.%]="getMacroPercentage('protein')"
+              title="Protein"
+            ></div>
+            <div
+              class="segment carbs-seg"
+              [style.width.%]="getMacroPercentage('carbs')"
+              title="Carbohydrates"
+            ></div>
+            <div
+              class="segment fat-seg"
+              [style.width.%]="getMacroPercentage('fat')"
+              title="Fats"
+            ></div>
           </div>
           <div class="ratio-legend mt-3">
             <div class="legend-item">
               <span class="dot protein-dot"></span>
-              <span>Protein: {{ getMacroPercentage('protein') | number:'1.0-0' }}%</span>
+              <span>Protein: {{ getMacroPercentage('protein') | number: '1.0-0' }}%</span>
             </div>
             <div class="legend-item">
               <span class="dot carbs-dot"></span>
-              <span>Carbs: {{ getMacroPercentage('carbs') | number:'1.0-0' }}%</span>
+              <span>Carbs: {{ getMacroPercentage('carbs') | number: '1.0-0' }}%</span>
             </div>
             <div class="legend-item">
               <span class="dot fat-dot"></span>
-              <span>Fat: {{ getMacroPercentage('fat') | number:'1.0-0' }}%</span>
+              <span>Fat: {{ getMacroPercentage('fat') | number: '1.0-0' }}%</span>
             </div>
           </div>
         </div>
@@ -134,7 +160,9 @@ import { IconComponent } from '../../shared/components/icon.component';
           <div class="card-header-row flex justify-between items-center mb-4">
             <div>
               <h3>Contributing Meals in Selected Period</h3>
-              <p class="text-xs text-secondary">Every meal ordered via GymPlate contributing to the macro totals above.</p>
+              <p class="text-xs text-secondary">
+                Meals you have received (Completed or Delivered), counted by quantity.
+              </p>
             </div>
             <span class="badge badge-neutral">{{ contributingItems.length }} dishes</span>
           </div>
@@ -156,14 +184,18 @@ import { IconComponent } from '../../shared/components/icon.component';
                 <tr *ngFor="let c of contributingItems">
                   <td>
                     <strong class="text-xs">{{ c.item.productName }}</strong>
-                    <small class="text-secondary block">{{ c.orderDate | date:'shortDate' }}</small>
+                    <small class="text-secondary block">{{
+                      c.orderDate | date: 'shortDate'
+                    }}</small>
                   </td>
                   <td class="text-center font-mono text-xs">{{ c.orderNumber }}</td>
                   <td class="text-center font-semibold">{{ c.item.quantity }}</td>
-                  <td class="text-center">{{ c.item.nutrition.calories }}</td>
-                  <td class="text-center font-semibold text-primary">{{ c.item.nutrition.protein }}g</td>
-                  <td class="text-center">{{ c.item.nutrition.carbs }}g</td>
-                  <td class="text-center">{{ c.item.nutrition.fat }}g</td>
+                  <td class="text-center">{{ c.item.nutrition.calories * c.item.quantity }}</td>
+                  <td class="text-center font-semibold text-primary">
+                    {{ c.item.nutrition.protein * c.item.quantity }}g
+                  </td>
+                  <td class="text-center">{{ c.item.nutrition.carbs * c.item.quantity }}g</td>
+                  <td class="text-center">{{ c.item.nutrition.fat * c.item.quantity }}g</td>
                 </tr>
               </tbody>
             </table>
@@ -171,8 +203,12 @@ import { IconComponent } from '../../shared/components/icon.component';
 
           <div class="empty-contributors text-center py-6" *ngIf="contributingItems.length === 0">
             <app-icon name="calendar" [size]="32" color="var(--color-text-tertiary)"></app-icon>
-            <p class="text-xs text-secondary mt-2">No orders placed during the selected timeframe.</p>
-            <button class="btn btn-secondary btn-sm mt-3" (click)="setTimeframe('all')">View All-Time Data</button>
+            <p class="text-xs text-secondary mt-2">
+              No received meals during the selected timeframe.
+            </p>
+            <button class="btn btn-secondary btn-sm mt-3" (click)="setTimeframe('all')">
+              View All-Time Data
+            </button>
           </div>
         </div>
 
@@ -181,9 +217,14 @@ import { IconComponent } from '../../shared/components/icon.component';
           <div class="flex items-start gap-3">
             <app-icon name="alert-circle" [size]="20" color="var(--color-warning)"></app-icon>
             <div>
-              <strong class="text-xs block text-warning font-semibold">Dietary Transparency & Medical Disclaimer</strong>
+              <strong class="text-xs block text-warning font-semibold"
+                >Dietary Transparency & Medical Disclaimer</strong
+              >
               <p class="text-xs text-secondary mt-1">
-                All nutrition metrics presented are calculated solely from meals ordered through the GymPlate platform. Macro values are provided by each commercial kitchen partner per specified recipe serving. This log is an athletic tracking utility and is not intended as medical, diagnostic, or clinical dietary advice.
+                All nutrition metrics presented are calculated solely from meals ordered through the
+                GymPlate platform. Macro values are provided by each commercial kitchen partner per
+                specified recipe serving. This log is an athletic tracking utility and is not
+                intended as medical, diagnostic, or clinical dietary advice.
               </p>
             </div>
           </div>
@@ -193,143 +234,158 @@ import { IconComponent } from '../../shared/components/icon.component';
 
     <app-public-footer></app-public-footer>
   `,
-  styles: [`
-    .nutrition-page {
-      background: var(--color-bg-secondary);
-      min-height: 85vh;
-    }
-    .filter-tabs {
-      display: flex;
-      padding: 4px;
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-md);
-      overflow-x: auto;
-    }
-    .tab-btn {
-      flex: 1;
-      padding: 8px 12px;
-      font-size: var(--font-size-xs);
-      font-weight: 500;
-      color: var(--color-text-secondary);
-      background: none;
-      border: none;
-      border-radius: var(--radius-sm);
-      cursor: pointer;
-      white-space: nowrap;
-      transition: all var(--transition-fast);
-    }
-    .tab-btn.active {
-      background: white;
-      color: var(--color-primary);
-      font-weight: 700;
-      box-shadow: var(--shadow-sm);
-    }
-
-    .macro-stats-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: var(--space-4);
-    }
-    .stat-card {
-      padding: var(--space-5);
-      border: 1px solid var(--color-border);
-      text-align: center;
-    }
-    .stat-card.highlight-card {
-      border-color: rgba(45, 90, 61, 0.4);
-      background: var(--color-primary-lighter);
-    }
-    .stat-lbl {
-      font-size: 11px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--color-text-secondary);
-      display: block;
-      margin-bottom: 4px;
-    }
-    .stat-val-group {
-      display: flex;
-      align-items: baseline;
-      justify-content: center;
-      gap: 4px;
-    }
-    .stat-num {
-      font-size: 2rem;
-      font-weight: 800;
-      line-height: 1;
-    }
-    .stat-unit {
-      font-size: var(--font-size-xs);
-      color: var(--color-text-secondary);
-    }
-    .stat-sub {
-      font-size: 10px;
-      color: var(--color-text-tertiary);
-      display: block;
-      margin-top: 4px;
-    }
-
-    .distribution-card {
-      padding: var(--space-5);
-      border: 1px solid var(--color-border);
-    }
-    .ratio-bar {
-      display: flex;
-      height: 14px;
-      border-radius: var(--radius-full);
-      overflow: hidden;
-      background: var(--color-bg-secondary);
-    }
-    .protein-seg { background: var(--color-primary); }
-    .carbs-seg { background: #3B82F6; }
-    .fat-seg { background: #F59E0B; }
-
-    .ratio-legend {
-      display: flex;
-      justify-content: center;
-      gap: var(--space-6);
-      font-size: var(--font-size-xs);
-    }
-    .legend-item {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-    }
-    .protein-dot { background: var(--color-primary); }
-    .carbs-dot { background: #3B82F6; }
-    .fat-dot { background: #F59E0B; }
-
-    .contributors-card {
-      padding: var(--space-5);
-      border: 1px solid var(--color-border);
-    }
-    .contributors-card h3 {
-      font-size: var(--font-size-base);
-    }
-
-    .disclaimer-card {
-      background: #FFFBEB;
-      border: 1px solid #FCD34D;
-      padding: var(--space-4);
-      border-radius: var(--radius-md);
-    }
-
-    @media (max-width: 800px) {
-      .macro-stats-grid {
-        grid-template-columns: repeat(2, 1fr);
+  styles: [
+    `
+      .nutrition-page {
+        background: var(--color-bg-secondary);
+        min-height: 85vh;
       }
-    }
-  `]
+      .filter-tabs {
+        display: flex;
+        padding: 4px;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        overflow-x: auto;
+      }
+      .tab-btn {
+        flex: 1;
+        padding: 8px 12px;
+        font-size: var(--font-size-xs);
+        font-weight: 500;
+        color: var(--color-text-secondary);
+        background: none;
+        border: none;
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        white-space: nowrap;
+        transition: all var(--transition-fast);
+      }
+      .tab-btn.active {
+        background: white;
+        color: var(--color-primary);
+        font-weight: 700;
+        box-shadow: var(--shadow-sm);
+      }
+
+      .macro-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: var(--space-4);
+      }
+      .stat-card {
+        padding: var(--space-5);
+        border: 1px solid var(--color-border);
+        text-align: center;
+      }
+      .stat-card.highlight-card {
+        border-color: rgba(45, 90, 61, 0.4);
+        background: var(--color-primary-lighter);
+      }
+      .stat-lbl {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--color-text-secondary);
+        display: block;
+        margin-bottom: 4px;
+      }
+      .stat-val-group {
+        display: flex;
+        align-items: baseline;
+        justify-content: center;
+        gap: 4px;
+      }
+      .stat-num {
+        font-size: 2rem;
+        font-weight: 800;
+        line-height: 1;
+      }
+      .stat-unit {
+        font-size: var(--font-size-xs);
+        color: var(--color-text-secondary);
+      }
+      .stat-sub {
+        font-size: 10px;
+        color: var(--color-text-tertiary);
+        display: block;
+        margin-top: 4px;
+      }
+
+      .distribution-card {
+        padding: var(--space-5);
+        border: 1px solid var(--color-border);
+      }
+      .ratio-bar {
+        display: flex;
+        height: 14px;
+        border-radius: var(--radius-full);
+        overflow: hidden;
+        background: var(--color-bg-secondary);
+      }
+      .protein-seg {
+        background: var(--color-primary);
+      }
+      .carbs-seg {
+        background: #3b82f6;
+      }
+      .fat-seg {
+        background: #f59e0b;
+      }
+
+      .ratio-legend {
+        display: flex;
+        justify-content: center;
+        gap: var(--space-6);
+        font-size: var(--font-size-xs);
+      }
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+      }
+      .protein-dot {
+        background: var(--color-primary);
+      }
+      .carbs-dot {
+        background: #3b82f6;
+      }
+      .fat-dot {
+        background: #f59e0b;
+      }
+
+      .contributors-card {
+        padding: var(--space-5);
+        border: 1px solid var(--color-border);
+      }
+      .contributors-card h3 {
+        font-size: var(--font-size-base);
+      }
+
+      .disclaimer-card {
+        background: #fffbeb;
+        border: 1px solid #fcd34d;
+        padding: var(--space-4);
+        border-radius: var(--radius-md);
+      }
+
+      @media (max-width: 800px) {
+        .macro-stats-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+    `,
+  ],
 })
 export class NutritionSummaryComponent implements OnInit {
   timeframe: 'today' | '7days' | '30days' | 'all' = '30days';
   totals = { calories: 0, protein: 0, carbs: 0, fat: 0 };
+  inProgressCount = 0;
   contributingItems: { item: OrderItem; orderNumber: string; orderDate: Date }[] = [];
 
   // [LIVE] reload this screen when Firestore sends new data (no page refresh needed)
@@ -337,7 +393,7 @@ export class NutritionSummaryComponent implements OnInit {
 
   constructor(
     private orderService: OrderService,
-    private authService: AuthService
+    private authService: AuthService,
   ) {}
 
   ngOnInit() {
@@ -351,10 +407,14 @@ export class NutritionSummaryComponent implements OnInit {
 
   timeframeLabel(): string {
     switch (this.timeframe) {
-      case 'today': return 'Today';
-      case '7days': return 'Last 7 Days';
-      case '30days': return 'Last 30 Days';
-      case 'all': return 'All Time';
+      case 'today':
+        return 'Today';
+      case '7days':
+        return 'Last 7 Days';
+      case '30days':
+        return 'Last 30 Days';
+      case 'all':
+        return 'All Time';
     }
   }
 
@@ -365,20 +425,31 @@ export class NutritionSummaryComponent implements OnInit {
     const orders = this.orderService.getCustomerOrders(user.id);
     const now = new Date().getTime();
 
-    // Filter orders by completed/delivered/active
-    const validOrders = orders.filter(o => o.status !== 'cancelled');
+    // [REAL-DATA] only meals the customer actually received count (completed / delivered).
+    // Orders still in progress are shown as a note, cancelled ones are ignored.
+    const validOrders = orders.filter((o) => o.status === 'completed' || o.status === 'delivered');
+    this.inProgressCount = orders.filter((o) =>
+      ['pending', 'confirmed', 'preparing', 'ready', 'out_for_delivery'].includes(o.status),
+    ).length;
+    // date the meal was received (falls back to the order date)
+    const receivedAt = (o: Order): number => {
+      const done = [...(o.statusHistory || [])]
+        .reverse()
+        .find((h) => h.status === 'completed' || h.status === 'delivered');
+      return new Date(done?.timestamp ?? o.updatedAt ?? o.createdAt).getTime();
+    };
 
     let filteredOrders: Order[] = [];
     if (this.timeframe === 'today') {
       const startOfDay = new Date();
       startOfDay.setHours(0, 0, 0, 0);
-      filteredOrders = validOrders.filter(o => new Date(o.createdAt).getTime() >= startOfDay.getTime());
+      filteredOrders = validOrders.filter((o) => receivedAt(o) >= startOfDay.getTime());
     } else if (this.timeframe === '7days') {
-      const past7 = now - (7 * 24 * 60 * 60 * 1000);
-      filteredOrders = validOrders.filter(o => new Date(o.createdAt).getTime() >= past7);
+      const past7 = now - 7 * 24 * 60 * 60 * 1000;
+      filteredOrders = validOrders.filter((o) => receivedAt(o) >= past7);
     } else if (this.timeframe === '30days') {
-      const past30 = now - (30 * 24 * 60 * 60 * 1000);
-      filteredOrders = validOrders.filter(o => new Date(o.createdAt).getTime() >= past30);
+      const past30 = now - 30 * 24 * 60 * 60 * 1000;
+      filteredOrders = validOrders.filter((o) => receivedAt(o) >= past30);
     } else {
       filteredOrders = validOrders;
     }
@@ -386,17 +457,18 @@ export class NutritionSummaryComponent implements OnInit {
     this.totals = { calories: 0, protein: 0, carbs: 0, fat: 0 };
     this.contributingItems = [];
 
-    filteredOrders.forEach(order => {
-      order.items.forEach(item => {
-        this.totals.calories += item.nutrition.calories;
-        this.totals.protein += item.nutrition.protein;
-        this.totals.carbs += item.nutrition.carbs;
-        this.totals.fat += item.nutrition.fat;
+    filteredOrders.forEach((order) => {
+      order.items.forEach((item) => {
+        const q = item.quantity || 1; // 3 bowls = 3x the macros
+        this.totals.calories += item.nutrition.calories * q;
+        this.totals.protein += item.nutrition.protein * q;
+        this.totals.carbs += item.nutrition.carbs * q;
+        this.totals.fat += item.nutrition.fat * q;
 
         this.contributingItems.push({
           item,
           orderNumber: order.orderNumber,
-          orderDate: order.createdAt
+          orderDate: new Date(receivedAt(order)),
         });
       });
     });
