@@ -17,7 +17,7 @@ import { IconComponent } from '../../shared/components/icon.component';
         <!-- Header -->
         <div class="select-header text-center">
           <div class="brand-badge">
-            <app-icon name="utensils" [size]="16" color="var(--color-primary)"></app-icon>
+            <app-icon name="leaf" [size]="16" color="var(--color-primary)"></app-icon>
             <span>GymPlate Membership</span>
           </div>
           <h1>Create Your Account</h1>

@@ -25,11 +25,13 @@ import { IconComponent } from '../../shared/components/icon.component';
   template: `
     <app-customer-nav></app-customer-nav>
 
-    <main class="page-content checkout-page">
+    <main class="page-content customer-ui checkout-page">
       <div class="container container-narrow">
         <div class="page-header mb-6">
           <div class="flex items-center gap-2 mb-1">
-            <a routerLink="/customer/cart" class="back-btn"><app-icon name="arrow-left" [size]="14"></app-icon> Back to cart</a>
+            <a routerLink="/customer/cart" class="back-btn"
+              ><app-icon name="arrow-left" [size]="14"></app-icon> Back to cart</a
+            >
           </div>
           <h1>Fulfillment & Checkout</h1>
           <p>
@@ -67,8 +69,8 @@ import { IconComponent } from '../../shared/components/icon.component';
                   <div class="f-info">
                     <strong>Self Pickup</strong>
                     <span>Direct pickup at kitchen counter</span>
-                    <small class="text-success font-semibold mt-1"
-                      >Free &bull; Ready in ~25 mins</small
+                    <small class="f-tag f-tag-free"
+                      >Free &bull; Ready time set by kitchen</small
                     >
                   </div>
                 </label>
@@ -87,7 +89,7 @@ import { IconComponent } from '../../shared/components/icon.component';
                   <div class="f-info">
                     <strong>Contact Delivery</strong>
                     <span>Direct to home, gym, or office</span>
-                    <small class="text-secondary mt-1">₱49.00 flat delivery fee</small>
+                    <small class="f-tag">₱49.00 flat delivery fee</small>
                   </div>
                 </label>
               </div>
@@ -147,8 +149,8 @@ import { IconComponent } from '../../shared/components/icon.component';
                     value="cash_on_pickup"
                     [(ngModel)]="paymentMethod"
                   />
-                  <app-icon name="dollar-sign" [size]="20"></app-icon>
-                  <div>
+                  <div class="f-icon"><app-icon name="dollar-sign" [size]="20"></app-icon></div>
+                  <div class="f-info">
                     <strong>Cash on Pickup</strong>
                     <span>Pay in cash at the store counter upon meal collection</span>
                   </div>
@@ -165,8 +167,8 @@ import { IconComponent } from '../../shared/components/icon.component';
                     value="cash_on_delivery"
                     [(ngModel)]="paymentMethod"
                   />
-                  <app-icon name="dollar-sign" [size]="20"></app-icon>
-                  <div>
+                  <div class="f-icon"><app-icon name="dollar-sign" [size]="20"></app-icon></div>
+                  <div class="f-info">
                     <strong>Cash on Delivery (COD)</strong>
                     <span>Pay courier upon arrival with exact cash</span>
                   </div>
@@ -175,8 +177,8 @@ import { IconComponent } from '../../shared/components/icon.component';
                 <!-- [EWALLET] demo e-wallet, works for pickup and delivery -->
                 <label class="payment-box" [class.selected]="paymentMethod === 'ewallet'">
                   <input type="radio" name="payment" value="ewallet" [(ngModel)]="paymentMethod" />
-                  <app-icon name="credit-card" [size]="20"></app-icon>
-                  <div>
+                  <div class="f-icon"><app-icon name="credit-card" [size]="20"></app-icon></div>
+                  <div class="f-info">
                     <strong>E-Wallet (GCash / Maya)</strong>
                     <span>Pay with your e-wallet. The kitchen confirms your payment.</span>
                   </div>
@@ -186,8 +188,8 @@ import { IconComponent } from '../../shared/components/icon.component';
               <div class="demo-payment-warning mt-3" *ngIf="paymentMethod === 'ewallet'">
                 <app-icon name="info" [size]="16" color="var(--color-primary)"></app-icon>
                 <span
-                  >Demo e-wallet: no real money moves and no wallet account is connected. The order is
-                  saved as "payment pending", and the kitchen marks it paid when the order is
+                  >Demo e-wallet: no real money moves and no wallet account is connected. The order
+                  is saved as "payment pending", and the kitchen marks it paid when the order is
                   completed.</span
                 >
               </div>
@@ -236,7 +238,7 @@ import { IconComponent } from '../../shared/components/icon.component';
                 <span>{{ cartService.subtotal() | currency: 'PHP' : 'symbol' }}</span>
               </div>
               <div class="calc-row">
-                <span>Fulfillment ({{ fulfillmentType }}):</span>
+                <span>{{ fulfillmentType === 'delivery' ? 'Delivery fee' : 'Pickup fee' }}:</span>
                 <span>{{
                   (fulfillmentType === 'delivery' ? 49 : 0) | currency: 'PHP' : 'symbol'
                 }}</span>
@@ -271,9 +273,11 @@ import { IconComponent } from '../../shared/components/icon.component';
               </button>
 
               <p class="notice-text">
-                {{ paymentMethod === 'ewallet'
-                  ? 'By placing this order you agree to pay through your e-wallet (demo).'
-                  : 'By placing this order you commit to fulfill the cash payment upon meal collection.' }}
+                {{
+                  paymentMethod === 'ewallet'
+                    ? 'By placing this order you agree to pay through your e-wallet (demo).'
+                    : 'By placing this order you commit to fulfill the cash payment upon meal collection.'
+                }}
                 An official printable receipt will be generated.
               </p>
             </div>
@@ -339,17 +343,56 @@ import { IconComponent } from '../../shared/components/icon.component';
         grid-template-columns: 1fr 1fr;
         gap: var(--space-3);
       }
+      /* [CHECKOUT-UI] every option is the same card: icon on top, then title, description, tag */
       .fulfillment-box,
       .payment-box {
         border: 1px solid var(--color-border);
-        border-radius: var(--radius);
-        padding: var(--space-4);
+        border-radius: 12px;
+        padding: 16px 44px 16px 16px;
         display: flex;
-        gap: var(--space-3);
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
         cursor: pointer;
         position: relative;
         background: white;
         transition: all var(--transition-fast);
+        min-height: 150px;
+      }
+      .fulfillment-box:hover,
+      .payment-box:hover {
+        border-color: var(--color-primary);
+      }
+      .f-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+        background: var(--color-primary-lighter);
+        color: var(--color-primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      .fulfillment-box.selected .f-icon,
+      .payment-box.selected .f-icon {
+        background: var(--color-primary);
+        color: #fff;
+      }
+      .f-tag {
+        display: inline-block;
+        margin-top: 8px;
+        padding: 3px 9px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 600;
+        background: var(--color-bg-tertiary);
+        color: var(--color-text-secondary);
+        width: fit-content;
+      }
+      .f-tag-free {
+        background: #e3f3e8;
+        color: #1f7a3d;
       }
       .fulfillment-box.selected,
       .payment-box.selected {
@@ -359,25 +402,31 @@ import { IconComponent } from '../../shared/components/icon.component';
       .fulfillment-box input,
       .payment-box input {
         position: absolute;
-        top: 12px;
-        right: 12px;
+        top: 14px;
+        right: 14px;
+        margin: 0;
+        width: 18px;
+        height: 18px;
+        accent-color: var(--color-primary);
       }
-      .f-info,
-      .payment-box div {
+      .f-info {
         display: flex;
         flex-direction: column;
+        gap: 2px;
       }
-      .f-info strong,
-      .payment-box strong {
-        font-size: var(--font-size-xs);
+      .f-info strong {
+        font-size: 14px;
+        line-height: 1.3;
+        color: var(--color-text);
       }
-      .f-info span,
-      .payment-box span {
-        font-size: 11px;
+      .f-info span {
+        font-size: 12.5px;
+        line-height: 1.45;
         color: var(--color-text-secondary);
       }
 
       .demo-payment-warning {
+        margin-bottom: var(--space-3);
         display: flex;
         gap: var(--space-2);
         align-items: flex-start;
@@ -542,7 +591,10 @@ export class CheckoutComponent implements OnInit {
         });
       } catch (e) {
         console.error('createOrder failed:', e);
-        res = { success: false, message: 'Something went wrong while placing the order. Please try again.' };
+        res = {
+          success: false,
+          message: 'Something went wrong while placing the order. Please try again.',
+        };
       }
 
       this.isSubmitting = false;

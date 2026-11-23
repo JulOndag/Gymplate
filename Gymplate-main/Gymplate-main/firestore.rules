@@ -1,0 +1,414 @@
+rules_version = '2';
+
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+
+    function isAdmin() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    function isCustomer() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'customer';
+    }
+
+    function isSeller() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'seller';
+    }
+
+    match /users/{userId} {
+      // A user can read their own profile. Admins can read any profile.
+      allow read: if signedIn() && (request.auth.uid == userId || isAdmin());
+
+
+      allow create: if signedIn()
+        && request.auth.uid == userId
+        && request.resource.data.keys().hasOnly([
+             'email', 'role', 'firstName', 'lastName', 'phone', 'address',
+             'city', 'state', 'zipCode', 'accountStatus', 'createdAt', 'updatedAt'])
+        && request.resource.data.role in ['customer', 'seller']
+        && request.resource.data.accountStatus == 'active'
+        && request.resource.data.email == request.auth.token.email;
+
+
+      allow update: if signedIn() && (
+        isAdmin()
+        || (request.auth.uid == userId
+            && request.resource.data.role == resource.data.role
+            && request.resource.data.accountStatus == resource.data.accountStatus
+            && request.resource.data.email == resource.data.email
+            && request.resource.data.createdAt == resource.data.createdAt
+            // [PROFILE-PHOTO] only these fields can change, and the picture must stay small
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+                 'firstName', 'lastName', 'phone', 'address', 'city', 'state', 'zipCode',
+                 'avatarUrl', 'updatedAt'])
+            && (!('avatarUrl' in request.resource.data)
+                || (request.resource.data.avatarUrl is string
+                    && request.resource.data.avatarUrl.size() < 100000)))
+      );
+
+      allow delete: if false;
+    }
+
+
+
+    match /sellerApplications/{sellerId} {
+      // A seller can read only their own application. Admins can read all.
+      allow read: if signedIn() && (request.auth.uid == sellerId || isAdmin());
+
+      // A seller can submit ONLY their own application, ONLY as 'pending'.
+      // The fixed list of fields blocks a seller from adding review fields (reviewedBy, etc.).
+      allow create: if isSeller()
+        && request.auth.uid == sellerId
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.status == 'pending'
+        && request.resource.data.keys().hasOnly([
+             'id', 'userId', 'personalInfo', 'businessInfo', 'documents',
+             'status', 'submittedAt', 'updatedAt']);
+
+
+      allow update: if isAdmin();
+      allow delete: if false;
+    }
+
+
+    match /businesses/{sellerId} {
+      // Signed-in users can see kitchens (customers need the names).
+      allow read: if signedIn();
+
+
+      allow create: if isAdmin();
+
+
+
+      allow update: if isAdmin()
+        || (signedIn()
+            && request.auth.uid == sellerId
+            && request.resource.data.sellerId == resource.data.sellerId
+            && request.resource.data.id == resource.data.id
+            && request.resource.data.isActive == resource.data.isActive);
+
+      allow delete: if false;
+    }
+
+
+    function canSell() {
+      return isSeller()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.accountStatus == 'active'
+        && exists(/databases/$(database)/documents/sellerApplications/$(request.auth.uid))
+        && get(/databases/$(database)/documents/sellerApplications/$(request.auth.uid)).data.status == 'approved';
+    }
+
+
+    function validProduct(d) {
+      return d.name is string && d.name.size() > 0 && d.name.size() <= 100
+        && d.description is string && d.description.size() <= 1000
+        && d.category is string && d.category.size() > 0 && d.category.size() <= 50
+        && d.price is number && d.price >= 0 && d.price <= 100000
+        && d.stock is int && d.stock >= 0 && d.stock <= 100000
+        && d.isAvailable is bool
+        && d.imageUrl is string && d.imageUrl.size() < 600000
+        && d.nutrition.servingSize is string
+        && d.nutrition.calories is number && d.nutrition.calories >= 0
+        && d.nutrition.protein is number && d.nutrition.protein >= 0
+        && d.nutrition.carbs is number && d.nutrition.carbs >= 0
+        && d.nutrition.fat is number && d.nutrition.fat >= 0;
+    }
+
+
+    function nutritionStaysHonest(newD, oldD) {
+      return (newD.nutrition == oldD.nutrition
+              && newD.get('nutritionSourceUrl', '') == oldD.get('nutritionSourceUrl', ''))
+        ? newD.get('nutritionStatus', 'pending') == oldD.get('nutritionStatus', 'pending')
+        : newD.get('nutritionStatus', 'pending') == 'pending';
+    }
+
+    // An admin cannot flip a REJECTED meal straight to VERIFIED.
+    // The seller must change the numbers or the link first (that sets it back to 'pending').
+    function adminReviewIsValid(newD, oldD) {
+      return !(oldD.get('nutritionStatus', 'pending') == 'rejected'
+               && newD.get('nutritionStatus', 'pending') == 'verified');
+    }
+
+    match /products/{productId} {
+  
+      allow read: if (resource.data.isDisabled == false
+            && resource.data.get('nutritionStatus', 'pending') == 'verified')
+        || isAdmin()
+        || (signedIn() && resource.data.sellerId == request.auth.uid);
+
+
+      allow create: if canSell()
+        && request.resource.data.sellerId == request.auth.uid
+        && request.resource.data.id == productId
+        && request.resource.data.isDisabled == false
+        && request.resource.data.nutritionSourceUrl is string
+        && request.resource.data.nutritionSourceUrl.matches('^https?://.+')
+        && request.resource.data.nutritionSourceUrl.size() <= 500
+        && request.resource.data.nutritionStatus == 'pending'
+        && request.resource.data.businessId ==
+             get(/databases/$(database)/documents/businesses/$(request.auth.uid)).data.id
+        && request.resource.data.keys().hasOnly([
+             'id', 'sellerId', 'businessId', 'name', 'description', 'category', 'price',
+             'imageUrl', 'nutrition', 'stock', 'isAvailable', 'isDisabled', 'createdAt', 'updatedAt',
+             'nutritionSourceUrl', 'nutritionStatus'])
+        && validProduct(request.resource.data);
+
+
+      allow update: if (isAdmin() && adminReviewIsValid(request.resource.data, resource.data))
+        || (canSell()
+            && resource.data.sellerId == request.auth.uid
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+                 'name', 'description', 'category', 'price', 'imageUrl',
+                 'nutrition', 'stock', 'isAvailable', 'isArchived', 'archivedAt', 'updatedAt',
+                 'nutritionSourceUrl', 'nutritionStatus'])
+            && (!('nutritionSourceUrl' in request.resource.data)
+                || (request.resource.data.nutritionSourceUrl is string
+                    && request.resource.data.nutritionSourceUrl.matches('^https?://.+')
+                    && request.resource.data.nutritionSourceUrl.size() <= 500))
+            && nutritionStaysHonest(request.resource.data, resource.data)
+            && validProduct(request.resource.data))
+       
+        || (isCustomer()
+            && resource.data.isDisabled == false
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+                 'stock', 'isAvailable', 'updatedAt'])
+            && request.resource.data.stock is int
+            && request.resource.data.stock >= 0
+            && request.resource.data.stock <= 100000
+            && request.resource.data.isAvailable is bool);
+
+      allow delete: if isAdmin() || (canSell() && resource.data.sellerId == request.auth.uid);
+    }
+
+
+    function validSellerStep(from, to) {
+      return (from in ['pending', 'confirmed'] && to == 'preparing')
+        || (from == 'preparing' && to == 'ready')
+        || (from == 'ready' && (to == 'completed' || to == 'out_for_delivery'))
+        || (from == 'out_for_delivery' && to == 'delivered')
+        || (from == 'delivered' && to == 'completed');
+    }
+
+    match /orders/{orderId} {
+
+      allow read: if signedIn()
+        && (resource.data.customerId == request.auth.uid
+            || resource.data.sellerId == request.auth.uid
+            || isAdmin());
+
+  
+      allow create: if isCustomer()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.accountStatus == 'active'
+        && request.resource.data.id == orderId
+        && request.resource.data.customerId == request.auth.uid
+        && request.resource.data.customerEmail == request.auth.token.email
+        && exists(/databases/$(database)/documents/users/$(request.resource.data.sellerId))
+        && get(/databases/$(database)/documents/users/$(request.resource.data.sellerId)).data.role == 'seller'
+        && request.resource.data.status == 'pending'
+        && request.resource.data.paymentStatus == 'pending'
+        && request.resource.data.fulfillmentType in ['pickup', 'delivery']
+        && request.resource.data.paymentMethod in ['cash_on_pickup', 'cash_on_delivery', 'ewallet']
+        && request.resource.data.items is list
+        && request.resource.data.items.size() > 0
+        && request.resource.data.items.size() <= 30
+        && request.resource.data.subtotal is number && request.resource.data.subtotal >= 0
+        && request.resource.data.deliveryFee is number && request.resource.data.deliveryFee >= 0
+        && request.resource.data.serviceFee is number && request.resource.data.serviceFee >= 0
+        && math.abs(request.resource.data.total
+             - (request.resource.data.subtotal + request.resource.data.deliveryFee + request.resource.data.serviceFee)) < 0.01
+        && request.resource.data.keys().hasOnly([
+             'id', 'orderNumber', 'customerId', 'customerName', 'customerEmail', 'customerPhone',
+             'customerAddress', 'sellerId', 'sellerName', 'businessId', 'businessName', 'items',
+             'subtotal', 'deliveryFee', 'serviceFee', 'total', 'fulfillmentType', 'paymentMethod',
+             'paymentStatus', 'status', 'specialInstructions', 'statusHistory', 'createdAt', 'updatedAt']);
+
+      allow update: if signedIn() && (
+  
+        (resource.data.customerId == request.auth.uid
+          && resource.data.status in ['pending', 'confirmed']
+          && request.resource.data.status == 'cancelled'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(
+               ['status', 'statusHistory', 'updatedAt']))
+ 
+        || (isAdmin()
+          && resource.data.status in ['pending', 'confirmed', 'preparing', 'ready']
+          && request.resource.data.status == 'cancelled'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(
+               ['status', 'statusHistory', 'updatedAt']))
+      
+        || (canSell()
+          && resource.data.sellerId == request.auth.uid
+          && validSellerStep(resource.data.status, request.resource.data.status)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(
+               ['status', 'statusHistory', 'paymentStatus', 'prepMinutes', 'estimatedReadyAt', 'updatedAt'])
+          && (request.resource.data.paymentStatus == resource.data.paymentStatus
+              || (request.resource.data.paymentStatus == 'paid'
+                  && request.resource.data.status in ['completed', 'delivered']))
+          && (request.resource.data.status != 'preparing'
+              || (request.resource.data.prepMinutes is int
+                  && request.resource.data.prepMinutes >= 1
+                  && request.resource.data.prepMinutes <= 120)))
+      
+        || (canSell()
+          && resource.data.sellerId == request.auth.uid
+          && resource.data.status in ['completed', 'delivered', 'cancelled']
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['archivedBySeller'])
+          && request.resource.data.archivedBySeller is bool)
+    
+        || (isAdmin()
+          && resource.data.status in ['completed', 'delivered', 'cancelled']
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['archivedByAdmin'])
+          && request.resource.data.archivedByAdmin is bool)
+
+        || (resource.data.customerId == request.auth.uid
+          && resource.data.status in ['completed', 'delivered', 'cancelled']
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['archivedByCustomer'])
+          && request.resource.data.archivedByCustomer is bool)
+      );
+
+      allow delete: if false;
+    }
+
+
+    match /notifications/{notificationId} {
+ 
+      // 'admins' is a shared inbox: the seller writes to it, every admin can read it.
+      allow read: if signedIn()
+        && (resource.data.userId == request.auth.uid
+            || (resource.data.userId == 'admins' && isAdmin()));
+
+ 
+      allow create: if signedIn()
+        && request.resource.data.id == notificationId
+        && request.resource.data.userId is string
+        && (request.resource.data.userId != 'admins' || isSeller() || isCustomer() || isAdmin())
+        && request.resource.data.isRead == false
+        && request.resource.data.title is string && request.resource.data.title.size() <= 150
+        && request.resource.data.message is string && request.resource.data.message.size() <= 500
+        && request.resource.data.keys().hasOnly(
+             ['id', 'userId', 'type', 'title', 'message', 'isRead', 'link', 'createdAt']);
+
+      allow update: if signedIn()
+        && (resource.data.userId == request.auth.uid
+            || (resource.data.userId == 'admins' && isAdmin()))
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isRead']);
+
+      allow delete: if false;
+    }
+
+    function orderOf(orderId) {
+      return get(/databases/$(database)/documents/orders/$(orderId)).data;
+    }
+
+    match /reviews/{reviewId} {
+     
+      allow read: if true;
+
+
+      allow create: if isCustomer()
+        && exists(/databases/$(database)/documents/orders/$(request.resource.data.orderId))
+        && request.resource.data.id == reviewId
+        && reviewId == request.resource.data.orderId + '_' + request.resource.data.productId
+        && request.resource.data.customerId == request.auth.uid
+        && orderOf(request.resource.data.orderId).customerId == request.auth.uid
+        && orderOf(request.resource.data.orderId).sellerId == request.resource.data.sellerId
+        && orderOf(request.resource.data.orderId).status in ['completed', 'delivered']
+        && request.resource.data.rating is int
+        && request.resource.data.rating >= 1
+        && request.resource.data.rating <= 5
+        && request.resource.data.comment is string
+        && request.resource.data.comment.size() <= 500
+        && request.resource.data.customerName is string
+        && request.resource.data.customerName.size() <= 100
+        && request.resource.data.productName is string
+        && request.resource.data.productName.size() <= 150
+        && request.resource.data.keys().hasOnly([
+             'id', 'orderId', 'customerId', 'customerName', 'sellerId', 'productId',
+             'productName', 'rating', 'ratingLabel', 'comment', 'createdAt']);
+
+    
+      allow update: if false;
+    
+      allow delete: if isAdmin();
+    }
+
+
+    match /reports/{reportId} {
+      allow read: if signedIn()
+        && (resource.data.customerId == request.auth.uid
+            || resource.data.sellerId == request.auth.uid
+            || isAdmin());
+
+  
+      allow create: if isCustomer()
+        && exists(/databases/$(database)/documents/orders/$(request.resource.data.orderId))
+        && request.resource.data.id == reportId
+        && request.resource.data.customerId == request.auth.uid
+        && request.resource.data.customerEmail == request.auth.token.email
+        && orderOf(request.resource.data.orderId).customerId == request.auth.uid
+        && orderOf(request.resource.data.orderId).sellerId == request.resource.data.sellerId
+        && request.resource.data.status == 'submitted'
+        && request.resource.data.reason in [
+             'Food quality issue', 'Incorrect or missing food item', 'Food arrived damaged or spilled',
+             'Food does not match its description', 'Incorrect nutritional information',
+             'Food safety or hygiene concern', 'Other']
+        && request.resource.data.description is string
+        && request.resource.data.description.size() >= 10
+        && request.resource.data.description.size() <= 2000
+        && request.resource.data.evidenceImages is list
+        && request.resource.data.evidenceImages.size() <= 4
+        && request.resource.data.history is list
+        && request.resource.data.history.size() == 1
+        && request.resource.data.keys().hasOnly([
+             'id', 'referenceNumber', 'orderId', 'orderNumber', 'customerId', 'customerName',
+             'customerEmail', 'customerPhone', 'sellerId', 'sellerName', 'businessId', 'businessName',
+             'productId', 'productName', 'reason', 'description', 'evidenceImages', 'status',
+             'history', 'createdAt', 'updatedAt']);
+
+      allow update: if signedIn() && (
+    
+        (canSell()
+          && resource.data.sellerId == request.auth.uid
+          && resource.data.status in ['submitted', 'under_review']
+          && !('sellerResponse' in resource.data)
+          && request.resource.data.status in ['submitted', 'under_review']
+          && request.resource.data.sellerResponse.response is string
+          && request.resource.data.sellerResponse.response.size() <= 2000
+          && request.resource.data.history.size() <= 50
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(
+               ['sellerResponse', 'history', 'status', 'updatedAt']))
+     
+        || (isAdmin()
+          && request.resource.data.status in ['under_review', 'resolved', 'rejected']
+          && request.resource.data.history.size() <= 50
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(
+               ['adminResolution', 'history', 'status', 'updatedAt']))
+      );
+
+      allow delete: if false;
+    }
+
+    match /activityLogs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin() && request.resource.data.adminId == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    // Everything else is blocked until its rules are written.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -12,7 +12,7 @@ import { IconComponent } from '../components/icon.component';
         <div class="footer-grid">
           <div class="footer-brand">
             <div class="logo">
-              <app-icon name="utensils" [size]="24" color="var(--color-primary)"></app-icon>
+              <app-icon name="leaf" [size]="24" color="var(--color-primary)"></app-icon>
               <span class="logo-text">Gym<span class="logo-accent">Plate</span></span>
             </div>
             <p class="brand-desc">

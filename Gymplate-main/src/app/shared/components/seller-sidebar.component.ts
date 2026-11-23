@@ -20,7 +20,7 @@ import { PORTAL_SIDEBAR_STYLES } from './portal-sidebar.styles';
       homeLink="/seller"
       accountLink="/seller/settings"
       accountLabel="Kitchen Settings"
-      [userName]="userName()"
+      [userName]="businessName()"
       [userEmail]="userEmail()"
       [photoUrl]="userPhoto()"
       [notices]="notices()"
@@ -43,26 +43,9 @@ import { PORTAL_SIDEBAR_STYLES } from './portal-sidebar.styles';
       [class.mobile-open]="isMobileDrawerOpen()"
     >
       <a routerLink="/seller" class="sidebar-brand" (click)="closeMobileDrawer()">
-        <app-icon name="utensils" [size]="24" color="#9bd3ae"></app-icon>
+        <app-icon name="leaf" [size]="34" color="#ffffff"></app-icon>
         <span *ngIf="!isCollapsed()">Gym<span class="brand-accent">Plate</span></span>
       </a>
-
-      <div class="profile-card" *ngIf="!isCollapsed() || isMobileDrawerOpen()">
-        <div class="profile-avatar">
-          <img *ngIf="userPhoto()" [src]="userPhoto()" alt="" />
-          <span *ngIf="!userPhoto()">{{ initials() }}</span>
-        </div>
-        <span class="profile-name">{{ businessName() }}</span>
-        <span class="role-badge">Seller</span>
-        <span class="status-chip" [ngClass]="'status-' + sellerStatus()">
-          {{ formatStatus(sellerStatus()) }}
-        </span>
-        <div *ngIf="sellerStatus() !== 'approved'" class="status-alert">
-          <small *ngIf="sellerStatus() === 'pending'">Application under review. Product creation locked.</small>
-          <small *ngIf="sellerStatus() === 'rejected'">Application rejected. Open Application Status for the reason.</small>
-          <small *ngIf="sellerStatus() === 'info_required'">Additional info requested by Admin.</small>
-        </div>
-      </div>
 
       <!-- Navigation Links -->
       <nav class="sidebar-nav">

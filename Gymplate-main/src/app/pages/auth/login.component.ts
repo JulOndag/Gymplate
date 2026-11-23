@@ -15,7 +15,7 @@ import { IconComponent } from '../../shared/components/icon.component';
         <!-- Brand Header -->
         <div class="auth-header text-center">
           <a routerLink="/" class="auth-logo">
-            <app-icon name="utensils" [size]="28" color="var(--color-primary)"></app-icon>
+            <app-icon name="leaf" [size]="28" color="var(--color-primary)"></app-icon>
             <span class="logo-text">Gym<span class="logo-accent">Plate</span></span>
           </a>
           <h2>Welcome Back</h2>

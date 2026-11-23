@@ -34,7 +34,10 @@ import {
   Order,
   Product,
   SellerApplication,
-  User, Review, Report } from '../models';
+  User,
+  Review,
+  Report,
+} from '../models';
 import { MockDataService } from './mock-data.service';
 
 /**
@@ -623,10 +626,21 @@ export class CloudStoreService {
     try {
       await runTransaction(firestore, async (tx) => {
         // all reads first, then the writes
+        const counterRef = doc(firestore, 'counters', 'orders');
+        const counterSnap = await tx.get(counterRef);
         const snaps = await Promise.all(
           lines.map(([id]) => tx.get(doc(firestore, 'products', id))),
         );
         const now = new Date().toISOString();
+        // [ORDER-NO] running number: 1, 2, 3 ... (shared by every customer, so it never repeats)
+        const lastNo =
+          counterSnap.exists() && typeof counterSnap.data()['last'] === 'number'
+            ? (counterSnap.data()['last'] as number)
+            : 0;
+        const nextNo = lastNo + 1;
+        order.orderNumber = 'GP-' + String(nextNo).padStart(4, '0');
+        if (counterSnap.exists()) tx.update(counterRef, { last: nextNo });
+        else tx.set(counterRef, { last: nextNo });
         snaps.forEach((snap, i) => {
           const [id, qty] = lines[i];
           const name = order.items.find((x) => x.productId === id)?.productName ?? 'A meal';

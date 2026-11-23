@@ -40,18 +40,9 @@ import { PORTAL_SIDEBAR_STYLES } from './portal-sidebar.styles';
       [class.mobile-open]="isMobileDrawerOpen()"
     >
       <a routerLink="/admin" class="sidebar-brand" (click)="closeMobileDrawer()">
-        <app-icon name="utensils" [size]="24" color="#9bd3ae"></app-icon>
+        <app-icon name="leaf" [size]="34" color="#ffffff"></app-icon>
         <span *ngIf="!isCollapsed()">Gym<span class="brand-accent">Plate</span></span>
       </a>
-
-      <div class="profile-card" *ngIf="!isCollapsed() || isMobileDrawerOpen()">
-        <div class="profile-avatar">
-          <img *ngIf="userPhoto()" [src]="userPhoto()" alt="" />
-          <span *ngIf="!userPhoto()">{{ initials() }}</span>
-        </div>
-        <span class="profile-name">{{ userName() }}</span>
-        <span class="role-badge">Administrator</span>
-      </div>
 
       <!-- Navigation Links -->
       <nav class="sidebar-nav">

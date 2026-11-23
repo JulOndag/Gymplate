@@ -143,7 +143,7 @@ export interface PortalNotice {
       .portal-header {
         position: fixed;
         top: 0;
-        left: var(--sidebar-width);
+        left: calc(var(--sidebar-width) + 32px);
         right: 0;
         height: var(--nav-height);
         z-index: 400;
@@ -152,9 +152,8 @@ export interface PortalNotice {
         align-items: center;
         justify-content: space-between;
         gap: var(--space-3);
-        padding: 0 var(--space-4);
-        background: var(--color-surface);
-        border-bottom: 1px solid var(--color-border);
+        padding: 8px var(--space-4) 0 0;
+        background: linear-gradient(to bottom, rgba(236, 242, 232, 0.96) 70%, rgba(236, 242, 232, 0));
       }
       .ph-left,
       .ph-right {
@@ -166,7 +165,7 @@ export interface PortalNotice {
 
       :host-context(body.seller-sidebar-collapsed) .portal-header,
       :host-context(body.admin-sidebar-collapsed) .portal-header {
-        left: var(--sidebar-collapsed);
+        left: calc(var(--sidebar-collapsed) + 32px);
       }
       .mobile-only {
         display: none;
@@ -208,15 +207,18 @@ export interface PortalNotice {
         display: flex;
         align-items: center;
         justify-content: center;
-        background: none;
-        border: 1px solid var(--color-border);
-        border-radius: var(--radius);
+        background: #fff;
+        border: 1px solid rgba(255, 255, 255, 0.95);
+        border-radius: 14px;
+        box-shadow: 0 2px 10px rgba(45, 90, 61, 0.1);
         color: var(--color-text);
         cursor: pointer;
       }
       .icon-btn:hover {
-        background: var(--color-bg-secondary);
+        background: var(--color-primary-lighter);
       }
+      .icon-btn:focus-visible,
+      .account-btn:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
       .bell-badge {
         position: absolute;
         top: -5px;
@@ -241,15 +243,16 @@ export interface PortalNotice {
         display: flex;
         align-items: center;
         gap: var(--space-2);
-        background: none;
-        border: 1px solid var(--color-border);
+        background: #fff;
+        border: 1px solid rgba(255, 255, 255, 0.95);
         border-radius: var(--radius-full);
-        padding: 3px 10px 3px 3px;
+        box-shadow: 0 2px 10px rgba(45, 90, 61, 0.1);
+        padding: 4px 12px 4px 4px;
         cursor: pointer;
         color: var(--color-text);
       }
       .account-btn:hover {
-        background: var(--color-bg-secondary);
+        background: var(--color-primary-lighter);
       }
       .avatar {
         width: 28px;
@@ -411,6 +414,8 @@ export interface PortalNotice {
         :host-context(body.seller-sidebar-collapsed) .portal-header,
         :host-context(body.admin-sidebar-collapsed) .portal-header {
           left: 0;
+          padding-left: var(--space-3);
+          padding-right: var(--space-3);
         }
         .mobile-only {
           display: inline-flex;

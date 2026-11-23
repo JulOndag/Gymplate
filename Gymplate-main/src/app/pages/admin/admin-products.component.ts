@@ -217,17 +217,7 @@ import { CloudStoreService } from '../../services/cloud-store.service';
               >
             </p>
 
-            <!-- A rejected meal stays rejected until the seller fixes it -->
-            <p
-              class="text-xs text-secondary mt-3"
-              *ngIf="!d.isArchived && d.nutritionStatus === 'rejected'"
-            >
-              This meal stays rejected until the seller fixes the nutrition facts or the reference
-              link. It goes back to "Pending" when the seller saves the change, and then you can
-              review it again.
-            </p>
-
-            <div class="mt-3" *ngIf="!d.isArchived && d.nutritionStatus !== 'rejected'">
+            <div class="mt-3" *ngIf="!d.isArchived">
               <label class="form-label" for="reviewNote"
                 >Review note (required when rejecting)</label
               >
@@ -240,14 +230,15 @@ import { CloudStoreService } from '../../services/cloud-store.service';
               ></textarea>
               <div class="mt-2 review-actions">
                 <button
-                  class="btn btn-success btn-sm"
-                  *ngIf="(d.nutritionStatus ?? 'pending') === 'pending'"
+                  class="btn btn-success btn-sm btn-keep"
+                  *ngIf="d.nutritionStatus !== 'verified'"
                   (click)="verifyNutrition(d)"
                 >
                   Verify nutrition
                 </button>
                 <button
-                  class="btn btn-outline btn-sm text-danger"
+                  class="btn btn-outline btn-sm text-danger btn-keep"
+                  *ngIf="d.nutritionStatus !== 'rejected'"
                   [disabled]="!reviewNote.trim()"
                   (click)="rejectNutrition(d)"
                 >
@@ -768,8 +759,6 @@ export class AdminProductsComponent implements OnInit {
 
   // [NUTRITION-REVIEW] Admin checks the seller's numbers against the reference link
   async verifyNutrition(product: Product) {
-    // A rejected meal cannot be verified until the seller fixes it (it returns to "pending")
-    if (product.nutritionStatus === 'rejected') return;
     if (
       !product.nutritionSourceUrl &&
       !confirm(

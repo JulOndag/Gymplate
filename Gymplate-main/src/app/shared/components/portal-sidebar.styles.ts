@@ -1,4 +1,4 @@
-/** Dark-green sidebar look shared by the admin and seller portals. */
+/** Floating dark-green sidebar shared by the admin and seller portals. */
 export const PORTAL_SIDEBAR_STYLES = `
   :host { display: block; }
 
@@ -12,11 +12,13 @@ export const PORTAL_SIDEBAR_STYLES = `
 
   .sidebar {
     position: fixed;
-    top: 0;
-    left: 0;
-    bottom: 0;
+    top: 16px;
+    left: 16px;
+    bottom: 16px;
     width: var(--sidebar-width);
-    background: var(--color-sidebar);
+    background: linear-gradient(180deg, #305f42 0%, #264c35 100%);
+    border-radius: 24px;
+    box-shadow: 0 14px 34px rgba(30, 67, 46, 0.28);
     color: var(--color-sidebar-text);
     display: flex;
     flex-direction: column;
@@ -27,81 +29,29 @@ export const PORTAL_SIDEBAR_STYLES = `
   .sidebar.collapsed { width: var(--sidebar-collapsed); }
 
   .sidebar-brand {
-    height: var(--nav-height);
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 0 var(--space-5);
-    flex-shrink: 0;
-    color: #fff;
-    text-decoration: none;
-    font-size: var(--font-size-lg);
-    font-weight: 700;
-  }
-  .sidebar.collapsed .sidebar-brand { justify-content: center; padding: 0; }
-  .brand-accent { color: #9bd3ae; }
-
-  .profile-card {
-    margin: var(--space-2) var(--space-4) var(--space-3);
-    padding: var(--space-4) var(--space-3);
-    border-radius: var(--radius-lg);
-    background: rgba(255, 255, 255, 0.07);
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 6px;
-    text-align: center;
-  }
-  .profile-avatar {
-    width: 52px;
-    height: 52px;
-    border-radius: 50%;
-    overflow: hidden;
-    background: #fff;
-    color: var(--color-primary);
-    font-weight: 700;
-    display: flex;
-    align-items: center;
     justify-content: center;
-  }
-  .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
-  .profile-name {
+    gap: 6px;
+    padding: 26px var(--space-4) 18px;
+    flex-shrink: 0;
     color: #fff;
-    font-size: var(--font-size-sm);
-    font-weight: 600;
-    max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    text-decoration: none;
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
   }
-  .role-badge {
-    font-size: 11px;
-    font-weight: 600;
-    padding: 2px 10px;
-    border-radius: var(--radius-full);
-    background: #9bd3ae;
-    color: var(--color-sidebar-deep);
-  }
-  .status-chip {
-    font-size: 10px;
-    font-weight: 600;
-    padding: 2px 8px;
-    border-radius: var(--radius-full);
-  }
-  .status-approved { background: rgba(155, 211, 174, 0.2); color: #b8e6c7; }
-  .status-pending { background: rgba(240, 173, 78, 0.22); color: #fbd38d; }
-  .status-rejected { background: rgba(220, 53, 69, 0.25); color: #fca5a5; }
-  .status-info_required { background: rgba(59, 130, 246, 0.25); color: #bfdbfe; }
-  .status-alert { font-size: 11px; line-height: 1.35; color: var(--color-sidebar-text); }
-  .sidebar.collapsed .profile-card { display: none; }
+  .sidebar.collapsed .sidebar-brand { padding: 22px 0 14px; }
+  .brand-accent { color: #a8dcb9; }
 
   .sidebar-nav {
     flex: 1;
     overflow-y: auto;
-    padding: var(--space-2) var(--space-3);
+    padding: var(--space-2) var(--space-4);
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 4px;
   }
   .nav-section-title {
     font-size: 11px;
@@ -113,27 +63,27 @@ export const PORTAL_SIDEBAR_STYLES = `
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 9px 12px;
+    padding: 11px 14px;
     color: var(--color-sidebar-text);
     text-decoration: none;
-    font-size: 13px;
-    border-radius: var(--radius-md);
+    font-size: 13.5px;
+    border-radius: 14px;
     transition: background var(--transition-fast), color var(--transition-fast);
     white-space: nowrap;
     position: relative;
   }
-  .sidebar.collapsed .sidebar-nav a { justify-content: center; padding: 10px 0; }
-  .sidebar-nav a:hover { background: rgba(255, 255, 255, 0.08); color: #fff; }
-  .sidebar-nav a.active { background: var(--color-sidebar-active); color: #fff; font-weight: 600; }
+  .sidebar.collapsed .sidebar-nav a { justify-content: center; padding: 12px 0; }
+  .sidebar-nav a:hover { background: rgba(255, 255, 255, 0.09); color: #fff; }
+  .sidebar-nav a.active { background: rgba(255, 255, 255, 0.18); color: #fff; font-weight: 600; }
   .sidebar-nav a:focus-visible,
-  .logout-btn:focus-visible { outline: 2px solid #9bd3ae; outline-offset: 1px; }
+  .logout-btn:focus-visible { outline: 2px solid #a8dcb9; outline-offset: 1px; }
   .sidebar-nav a.disabled-link { opacity: 0.45; pointer-events: none; }
   .sidebar-nav a.highlight-link { color: #fbd38d; }
 
   .count-pill {
     margin-left: auto;
-    background: #9bd3ae;
-    color: var(--color-sidebar-deep);
+    background: #a8dcb9;
+    color: #17352a;
     font-size: 10px;
     font-weight: 700;
     padding: 1px 7px;
@@ -158,35 +108,38 @@ export const PORTAL_SIDEBAR_STYLES = `
   }
 
   .sidebar-footer {
-    padding: var(--space-3) var(--space-3) var(--space-4);
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    margin: 0 var(--space-4);
+    padding: var(--space-3) 0 var(--space-4);
+    border-top: 1px solid rgba(255, 255, 255, 0.14);
   }
   .logout-btn {
     display: flex;
     align-items: center;
     gap: 12px;
     width: 100%;
-    padding: 9px 12px;
+    padding: 11px 14px;
     background: none;
     border: none;
-    border-radius: var(--radius-md);
+    border-radius: 14px;
     color: var(--color-sidebar-text);
-    font-size: 13px;
+    font-size: 13.5px;
     cursor: pointer;
     transition: background var(--transition-fast), color var(--transition-fast);
   }
-  .sidebar.collapsed .logout-btn { justify-content: center; padding: 10px 0; }
-  .logout-btn:hover { background: rgba(255, 255, 255, 0.08); color: #fff; }
+  .sidebar.collapsed .logout-btn { justify-content: center; padding: 12px 0; }
+  .logout-btn:hover { background: rgba(255, 255, 255, 0.09); color: #fff; }
 
   @media (max-width: 900px) {
     .drawer-backdrop { display: block; }
     .sidebar {
-      transform: translateX(-100%);
+      top: 12px;
+      left: 12px;
+      bottom: 12px;
+      transform: translateX(calc(-100% - 24px));
       transition: transform var(--transition);
       width: 280px !important;
       z-index: 600;
     }
-    .sidebar.mobile-open { transform: translateX(0); box-shadow: var(--shadow-xl); }
-    .sidebar.collapsed .profile-card { display: flex; }
+    .sidebar.mobile-open { transform: translateX(0); }
   }
 `;

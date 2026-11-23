@@ -58,8 +58,6 @@ export class AdminService {
   ): Promise<boolean> {
     const product = this.mockData.getProduct(productId);
     if (!product) return false;
-    // A rejected meal cannot go straight to "verified": the seller must fix it first.
-    if (status === 'verified' && product.nutritionStatus === 'rejected') return false;
     const updated = {
       ...product,
       nutritionStatus: status,

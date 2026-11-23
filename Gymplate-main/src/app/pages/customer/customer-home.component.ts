@@ -30,7 +30,7 @@ import { greeting } from '../../shared/utils/dashboard.util';
       >
     </div>
 
-    <main class="page-content customer-dashboard">
+    <main class="page-content customer-ui customer-dashboard">
       <div class="container">
         <!-- Welcome banner (same look as the seller and admin dashboards) -->
         <section class="dash-hero">
@@ -39,16 +39,6 @@ import { greeting } from '../../shared/utils/dashboard.util';
             <p>
               Ready to fuel your training? Explore today's freshly prepared high-protein selections.
             </p>
-            <div class="dash-hero-actions">
-              <a routerLink="/customer/explore" class="btn-hero">
-                <app-icon name="compass" [size]="14"></app-icon>
-                Explore meals
-              </a>
-              <a routerLink="/customer/nutrition" class="btn-hero ghost">
-                <app-icon name="activity" [size]="14"></app-icon>
-                View nutrition summary
-              </a>
-            </div>
           </div>
           <img class="dash-hero-img" *ngIf="heroImage" [src]="heroImage" alt="" />
         </section>

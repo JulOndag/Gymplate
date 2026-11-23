@@ -27,7 +27,7 @@ import { IconComponent } from './icon.component';
           <div class="receipt-header">
             <div class="brand">
               <div class="brand-title">
-                <app-icon name="utensils" [size]="22" color="var(--color-primary)"></app-icon>
+                <app-icon name="leaf" [size]="22" color="var(--color-primary)"></app-icon>
                 <span>Gym<strong class="text-primary">Plate</strong></span>
               </div>
               <p class="brand-sub">Nutrition-Based Fitness Food Ordering</p>

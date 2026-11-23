@@ -15,7 +15,7 @@ import { IconComponent } from './icon.component';
       <div class="nav-container">
         <!-- Logo -->
         <a routerLink="/customer" class="logo">
-          <app-icon name="utensils" [size]="24" color="var(--color-primary)"></app-icon>
+          <app-icon name="leaf" [size]="24" color="var(--color-primary)"></app-icon>
           <span class="logo-text">Gym<span class="logo-accent">Plate</span></span>
           <span class="portal-badge">Customer</span>
         </a>
@@ -157,19 +157,22 @@ import { IconComponent } from './icon.component';
       .customer-nav {
         position: sticky;
         top: 0;
-        background: var(--color-surface);
-        border-bottom: 1px solid var(--color-border);
-        height: var(--nav-height);
+        padding: 12px var(--space-4) 0;
+        background: transparent;
         z-index: 200;
       }
       .nav-container {
         max-width: var(--container-max);
         margin: 0 auto;
-        padding: 0 var(--space-6);
-        height: 100%;
+        padding: 0 var(--space-5);
+        height: var(--nav-height);
         display: flex;
         align-items: center;
         justify-content: space-between;
+        background: rgba(255, 255, 255, 0.94);
+        border: 1px solid rgba(255, 255, 255, 0.95);
+        border-radius: 22px;
+        box-shadow: 0 4px 18px rgba(45, 90, 61, 0.1);
       }
       .logo {
         display: flex;
@@ -429,11 +432,12 @@ import { IconComponent } from './icon.component';
         .nav-links {
           display: none;
           position: absolute;
-          top: var(--nav-height);
-          left: 0;
-          right: 0;
+          top: calc(var(--nav-height) + 20px);
+          left: var(--space-4);
+          right: var(--space-4);
+          border-radius: 20px;
           background: var(--color-surface);
-          border-bottom: 1px solid var(--color-border);
+          border: 1px solid var(--color-border);
           flex-direction: column;
           padding: var(--space-6);
           gap: var(--space-3);

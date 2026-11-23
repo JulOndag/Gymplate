@@ -217,7 +217,17 @@ import { CloudStoreService } from '../../services/cloud-store.service';
               >
             </p>
 
-            <div class="mt-3" *ngIf="!d.isArchived">
+            <!-- Rejected: nothing more to decide until the seller corrects the numbers -->
+            <p
+              class="text-xs text-secondary mt-3"
+              *ngIf="!d.isArchived && d.nutritionStatus === 'rejected'"
+            >
+              This meal was rejected. It stays rejected until the seller corrects the nutrition
+              facts and saves the meal again. It then goes back to Pending and you can review it
+              again.
+            </p>
+
+            <div class="mt-3" *ngIf="!d.isArchived && d.nutritionStatus !== 'rejected'">
               <label class="form-label" for="reviewNote"
                 >Review note (required when rejecting)</label
               >
@@ -230,15 +240,14 @@ import { CloudStoreService } from '../../services/cloud-store.service';
               ></textarea>
               <div class="mt-2 review-actions">
                 <button
-                  class="btn btn-success btn-sm"
+                  class="btn btn-success btn-sm btn-keep"
                   *ngIf="d.nutritionStatus !== 'verified'"
                   (click)="verifyNutrition(d)"
                 >
                   Verify nutrition
                 </button>
                 <button
-                  class="btn btn-outline btn-sm text-danger"
-                  *ngIf="d.nutritionStatus !== 'rejected'"
+                  class="btn btn-outline btn-sm text-danger btn-keep"
                   [disabled]="!reviewNote.trim()"
                   (click)="rejectNutrition(d)"
                 >
@@ -272,13 +281,7 @@ import { CloudStoreService } from '../../services/cloud-store.service';
           >
             Disable Dish
           </button>
-          <button
-            class="btn btn-success"
-            *ngIf="d.isDisabled && !d.isArchived"
-            (click)="enableProduct(d)"
-          >
-            Re-Enable
-          </button>
+
           <button class="btn btn-primary" (click)="closeDetails()">Close</button>
         </div>
       </div>
@@ -759,6 +762,7 @@ export class AdminProductsComponent implements OnInit {
 
   // [NUTRITION-REVIEW] Admin checks the seller's numbers against the reference link
   async verifyNutrition(product: Product) {
+    if (product.nutritionStatus === 'rejected') return; // a rejected meal can only be reviewed again after the seller edits it
     if (
       !product.nutritionSourceUrl &&
       !confirm(

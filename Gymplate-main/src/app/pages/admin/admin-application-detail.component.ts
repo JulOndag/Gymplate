@@ -49,15 +49,15 @@ import { IconComponent } from '../../shared/components/icon.component';
                 >
               </div>
               <div class="flex gap-2">
-                <button class="btn btn-success btn-sm" (click)="openApproveModal()">
+                <button class="btn btn-success btn-sm btn-keep" (click)="openApproveModal()">
                   <app-icon name="check-circle" [size]="14"></app-icon>
                   Approve Application
                 </button>
-                <button class="btn btn-secondary btn-sm" (click)="openActionModal('info_required')">
+                <button class="btn btn-secondary btn-sm btn-keep" (click)="openActionModal('info_required')">
                   <app-icon name="info" [size]="14"></app-icon>
                   Request More Info
                 </button>
-                <button class="btn btn-danger btn-sm" (click)="openActionModal('rejected')">
+                <button class="btn btn-danger btn-sm btn-keep" (click)="openActionModal('rejected')">
                   <app-icon name="x-circle" [size]="14"></app-icon>
                   Reject Application
                 </button>
@@ -226,7 +226,7 @@ import { IconComponent } from '../../shared/components/icon.component';
           <button class="btn btn-secondary" (click)="showActionModal = false">Cancel</button>
           <button
             class="btn"
-            [ngClass]="modalAction === 'rejected' ? 'btn-danger' : 'btn-primary'"
+            [ngClass]="modalAction === 'rejected' ? 'btn-danger btn-keep' : 'btn-primary btn-keep'"
             [disabled]="!modalReason.trim()"
             (click)="confirmModalAction()"
           >

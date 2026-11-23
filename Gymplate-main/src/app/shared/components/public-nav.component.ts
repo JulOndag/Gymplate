@@ -17,7 +17,7 @@ import { IconComponent } from '../components/icon.component';
           class="logo"
           aria-label="GymPlate Home"
         >
-          <app-icon name="utensils" [size]="24" color="var(--color-primary)"></app-icon>
+          <app-icon name="leaf" [size]="24" color="var(--color-primary)"></app-icon>
           <span class="logo-text">Gym<span class="logo-accent">Plate</span></span>
         </a>
 

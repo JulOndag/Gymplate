@@ -26,7 +26,7 @@ interface DocFile {
         <!-- Brand Header -->
         <div class="wizard-header text-center">
           <a routerLink="/" class="wizard-logo">
-            <app-icon name="utensils" [size]="28" color="var(--color-primary)"></app-icon>
+            <app-icon name="leaf" [size]="28" color="var(--color-primary)"></app-icon>
             <span class="logo-text">Gym<span class="logo-accent">Plate</span></span>
             <span class="wizard-badge">Seller Onboarding</span>
           </a>
