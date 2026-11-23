@@ -50,7 +50,14 @@ import { MockDataService } from './mock-data.service';
  *  3. Every change is saved here (to Firestore) first. The Security Rules decide if it is allowed.
  */
 
-const DATE_KEYS = ['submittedAt', 'updatedAt', 'reviewedAt', 'createdAt', 'timestamp', 'resubmittedAt'];
+const DATE_KEYS = [
+  'submittedAt',
+  'updatedAt',
+  'reviewedAt',
+  'createdAt',
+  'timestamp',
+  'resubmittedAt',
+];
 
 /** [ORDERS-FS #1] Orders have dates inside lists too (statusHistory), so turn ISO text back into Dates everywhere. */
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/;
@@ -169,7 +176,7 @@ export class CloudStoreService {
           this.watchCollection('orders', (docs) =>
             this.mockData.replaceCloudOrders(docs.map((d) => reviveDates<Order>(d.data))),
           ),
-          this.watchNotifications(user.id),
+          this.watchNotifications(user.id, ['admins']), // [ADMIN-INBOX]
           // [REVIEWS-FS #6] [REPORTS-FS #4] the admin sees every review and every report
           this.watchReviews(),
           this.watchReports(),
@@ -250,13 +257,22 @@ export class CloudStoreService {
   }
 
   /** [ORDERS-FS #4] Each person gets only their own notifications. */
-  private watchNotifications(userId: string): Promise<void> {
-    return this.watchCollection(
-      'notifications',
-      (docs) =>
-        this.mockData.replaceCloudNotifications(docs.map((d) => fromPlain<Notification>(d.data))),
-      [where('userId', '==', userId)],
-    );
+  private watchNotifications(userId: string, alsoInboxes: string[] = []): Promise<void> {
+    // [ADMIN-INBOX] one listener per inbox (own id, plus 'admins' for an admin). Their results are merged.
+    const inboxes = [userId, ...alsoInboxes];
+    const parts: Notification[][] = inboxes.map(() => []);
+    return Promise.all(
+      inboxes.map((id, i) =>
+        this.watchCollection(
+          'notifications',
+          (docs) => {
+            parts[i] = docs.map((d) => fromPlain<Notification>(d.data));
+            this.mockData.replaceCloudNotifications(parts.flat());
+          },
+          [where('userId', '==', id)],
+        ),
+      ),
+    ).then(() => undefined);
   }
 
   /** Stop listening (on logout). */

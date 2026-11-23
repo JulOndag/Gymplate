@@ -5,7 +5,10 @@ import { CloudStoreService } from './cloud-store.service';
 
 @Injectable({ providedIn: 'root' })
 export class SellerService {
-  constructor(private mockData: MockDataService, private cloud: CloudStoreService) {}
+  constructor(
+    private mockData: MockDataService,
+    private cloud: CloudStoreService,
+  ) {}
 
   getApplication(userId: string): SellerApplication | undefined {
     return this.mockData.getSellerApplicationByUserId(userId);
@@ -25,14 +28,16 @@ export class SellerService {
   }
 
   /**
-   * [APPEAL] A rejected seller (or one asked for more information) sends the fixed documents
-   * and a note, and the same application goes back to "pending". No new account is needed.
+   * [APPEAL] Only a seller the admin asked for more information ("info_required") can send the
+   * fixed documents and a note, and the same application goes back to "pending".
+   * A "rejected" application is final and cannot be resubmitted.
    */
   async resubmitApplication(
     app: SellerApplication,
     documents: SellerApplication['documents'],
     note: string,
   ): Promise<boolean> {
+    if (app.status !== 'info_required') return false;
     const now = new Date();
     const patch = {
       documents,
@@ -62,7 +67,10 @@ export class SellerService {
 
   /** The kitchen logo (from the business, or from the application before approval). Ignores demo entries. */
   getKitchenLogo(sellerId: string): string {
-    const url = this.getBusiness(sellerId)?.logoUrl || this.getApplication(sellerId)?.documents.logo?.url || '';
+    const url =
+      this.getBusiness(sellerId)?.logoUrl ||
+      this.getApplication(sellerId)?.documents.logo?.url ||
+      '';
     return url.startsWith('data:') || url.startsWith('http') ? url : '';
   }
 
@@ -100,7 +108,7 @@ export class SellerService {
       status: 'approved',
       reviewedBy: adminId,
       reviewedAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
     };
 
     // The storefront (business) is created together with the approval.
@@ -120,7 +128,7 @@ export class SellerService {
       logoUrl: app.documents.logo?.url, // [APP-DOCS] the logo the seller uploaded
       isActive: true,
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
     };
 
     const ok = await this.cloud.approveApplication(updated, business);
@@ -131,7 +139,11 @@ export class SellerService {
     return ok;
   }
 
-  async rejectApplication(applicationId: string, adminId: string, reason: string): Promise<boolean> {
+  async rejectApplication(
+    applicationId: string,
+    adminId: string,
+    reason: string,
+  ): Promise<boolean> {
     const app = this.mockData.getSellerApplication(applicationId);
     if (!app) return false;
 
@@ -141,7 +153,7 @@ export class SellerService {
       rejectionReason: reason,
       reviewedBy: adminId,
       reviewedAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
     };
     return this.updateApplication(updated);
   }
@@ -156,7 +168,7 @@ export class SellerService {
       infoRequestReason: reason,
       reviewedBy: adminId,
       reviewedAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
     };
     return this.updateApplication(updated);
   }

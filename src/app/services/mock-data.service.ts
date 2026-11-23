@@ -1721,11 +1721,18 @@ export class MockDataService {
   }
 
   getNotificationsByUserId(userId: string): Notification[] {
-    return JSON.parse(JSON.stringify(this.notifications.filter((n) => n.userId === userId)));
+    // [ADMIN-INBOX] notices sent to the shared 'admins' inbox. Only an admin's browser can read them (Firestore rules).
+    return JSON.parse(
+      JSON.stringify(
+        this.notifications.filter((n) => n.userId === userId || n.userId === 'admins'),
+      ),
+    );
   }
 
   getUnreadNotificationCount(userId: string): number {
-    return this.notifications.filter((n) => n.userId === userId && !n.isRead).length;
+    return this.notifications.filter(
+      (n) => (n.userId === userId || n.userId === 'admins') && !n.isRead,
+    ).length;
   }
 
   getReviewsByOrderId(orderId: string): Review[] {
@@ -1848,7 +1855,12 @@ export class MockDataService {
     if (!found) return null;
     const report: Report = { ...found, history: [...found.history] };
     report.status = status;
-    report.adminResolution = { actionTaken, remarks, resolvedAt: new Date(), resolvedBy: adminName };
+    report.adminResolution = {
+      actionTaken,
+      remarks,
+      resolvedAt: new Date(),
+      resolvedBy: adminName,
+    };
     report.history.push({
       timestamp: new Date(),
       updatedBy: `Admin: ${adminName}`,

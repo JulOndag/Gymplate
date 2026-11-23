@@ -409,9 +409,13 @@ import { CloudStoreService } from '../../services/cloud-store.service';
 export class SellerProductsComponent implements OnInit {
   // [PRODUCTS-FS #11] Refresh this screen whenever Firestore data changes
   private cloud = inject(CloudStoreService);
+  private liveCdr = inject(ChangeDetectorRef);
   private liveRefresh = effect(() => {
     this.cloud.version();
-    untracked(() => this.ngOnInit());
+    untracked(() => {
+      this.ngOnInit();
+      this.liveCdr.markForCheck(); // [LIVE] redraw now, so no click is needed to see new data
+    });
   });
 
   allMine: Product[] = [];

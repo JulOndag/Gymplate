@@ -10,12 +10,23 @@ import { SellerSidebarComponent } from '../../shared/components/seller-sidebar.c
 import { IconComponent } from '../../shared/components/icon.component';
 import { compressImageToDataUrl } from '../../shared/utils/image.util'; // [PRODUCTS-FS #10]
 import { NutritionProofFieldsComponent } from '../../shared/components/nutrition-proof-fields.component';
-import { ProofErrors, validateNutritionProof, hasProofErrors } from '../../shared/utils/nutrition-proof.util';
+import {
+  ProofErrors,
+  validateNutritionProof,
+  hasProofErrors,
+} from '../../shared/utils/nutrition-proof.util';
 
 @Component({
   selector: 'app-add-product',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, SellerSidebarComponent, IconComponent, NutritionProofFieldsComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    RouterLink,
+    SellerSidebarComponent,
+    IconComponent,
+    NutritionProofFieldsComponent,
+  ],
   template: `
     <div class="seller-layout">
       <app-seller-sidebar></app-seller-sidebar>
@@ -23,9 +34,13 @@ import { ProofErrors, validateNutritionProof, hasProofErrors } from '../../share
       <main class="seller-main-content">
         <div class="seller-container container-narrow">
           <div class="page-header mb-6">
-            <a routerLink="/seller/products" class="back-btn"><app-icon name="arrow-left" [size]="14"></app-icon> Back to Products</a>
+            <a routerLink="/seller/products" class="back-btn"
+              ><app-icon name="arrow-left" [size]="14"></app-icon> Back to Products</a
+            >
             <h1>Add New Fitness Meal</h1>
-            <p class="text-xs text-secondary">Publish a new recipe with exact macronutrient counts per measured serving.</p>
+            <p class="text-xs text-secondary">
+              Publish a new recipe with exact macronutrient counts per measured serving.
+            </p>
           </div>
 
           <!-- Pending Alert if not verified -->
@@ -33,7 +48,10 @@ import { ProofErrors, validateNutritionProof, hasProofErrors } from '../../share
             <app-icon name="alert-triangle" [size]="18"></app-icon>
             <div>
               <strong>Publishing Locked</strong>
-              <p class="text-xs mt-1">Your kitchen status is {{ sellerStatus() }}. You must be an Approved Seller to list products on GymPlate.</p>
+              <p class="text-xs mt-1">
+                Your kitchen status is {{ sellerStatus() }}. You must be an Approved Seller to list
+                products on GymPlate.
+              </p>
             </div>
           </div>
 
@@ -60,8 +78,16 @@ import { ProofErrors, validateNutritionProof, hasProofErrors } from '../../share
               <div class="form-row">
                 <div class="form-group">
                   <label class="form-label" for="category">Category</label>
-                  <select id="category" class="form-control" [(ngModel)]="product.category" name="category" required>
-                    <option *ngFor="let cat of categories" [value]="cat.name">{{ cat.name }}</option>
+                  <select
+                    id="category"
+                    class="form-control"
+                    [(ngModel)]="product.category"
+                    name="category"
+                    required
+                  >
+                    <option *ngFor="let cat of categories" [value]="cat.name">
+                      {{ cat.name }}
+                    </option>
                   </select>
                 </div>
 
@@ -140,13 +166,23 @@ import { ProofErrors, validateNutritionProof, hasProofErrors } from '../../share
                       <span>Photo uploaded successfully</span>
                     </div>
                     <p class="image-filename" *ngIf="uploadedFileName">{{ uploadedFileName }}</p>
-                    <p class="text-xs text-secondary mt-1">This photo will be displayed to customers across GymPlate.</p>
+                    <p class="text-xs text-secondary mt-1">
+                      This photo will be displayed to customers across GymPlate.
+                    </p>
                     <div class="uploaded-image-actions mt-3">
-                      <button type="button" class="btn btn-outline btn-sm" (click)="fileInput.click()">
+                      <button
+                        type="button"
+                        class="btn btn-outline btn-sm"
+                        (click)="fileInput.click()"
+                      >
                         <app-icon name="upload" [size]="14"></app-icon>
                         Change Photo
                       </button>
-                      <button type="button" class="btn btn-ghost btn-sm text-danger" (click)="removeImage(fileInput)">
+                      <button
+                        type="button"
+                        class="btn btn-ghost btn-sm text-danger"
+                        (click)="removeImage(fileInput)"
+                      >
                         <app-icon name="trash" [size]="14"></app-icon>
                         Remove Photo
                       </button>
@@ -238,7 +274,11 @@ import { ProofErrors, validateNutritionProof, hasProofErrors } from '../../share
               </div>
 
               <!-- [NUTRITION-PROOF] source, link, ingredients, photo evidence, calorie check, confirmation -->
-              <app-nutrition-proof-fields [product]="product" [errors]="proofErrors" [state]="proofState"></app-nutrition-proof-fields>
+              <app-nutrition-proof-fields
+                [product]="product"
+                [errors]="proofErrors"
+                [state]="proofState"
+              ></app-nutrition-proof-fields>
 
               <!-- Stock & Availability -->
               <div class="section-divider mt-6">
@@ -266,7 +306,9 @@ import { ProofErrors, validateNutritionProof, hasProofErrors } from '../../share
                     <label class="switch-control">
                       <input type="checkbox" [(ngModel)]="product.isAvailable" name="isAvailable" />
                       <span class="switch-track"></span>
-                      <span class="text-xs font-medium">Publish dish as immediately available to order</span>
+                      <span class="text-xs font-medium"
+                        >Publish dish as immediately available to order</span
+                      >
                     </label>
                   </div>
                 </div>
@@ -293,198 +335,201 @@ import { ProofErrors, validateNutritionProof, hasProofErrors } from '../../share
       </main>
     </div>
   `,
-  styles: [`
-    .seller-layout {
-      display: flex;
-      min-height: 100vh;
-      background: var(--color-bg-secondary);
-    }
-    .seller-main-content {
-      flex: 1;
-      margin-left: var(--sidebar-width);
-      padding: var(--space-8) var(--space-6);
-    }
-    .seller-container {
-      max-width: var(--container-narrow);
-      margin: 0 auto;
-    }
-
-    .form-card {
-      padding: var(--space-8);
-      border: 1px solid var(--color-border);
-      background: white;
-      border-radius: var(--radius-md);
-    }
-
-    .section-divider {
-      padding-bottom: var(--space-2);
-      border-bottom: 1px solid var(--color-border);
-      margin-bottom: var(--space-4);
-    }
-    .sec-title {
-      font-size: 11px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--color-primary);
-    }
-
-    .image-upload-section {
-      margin-bottom: var(--space-4);
-    }
-    .dropzone-box {
-      border: 2px dashed var(--color-border);
-      border-radius: var(--radius-md);
-      padding: var(--space-6) var(--space-4);
-      background: var(--color-bg-secondary);
-      text-align: center;
-      cursor: pointer;
-      transition: all var(--transition-fast);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: var(--space-2);
-    }
-    .dropzone-box:hover, .dropzone-box.is-dragover {
-      border-color: var(--color-primary);
-      background: rgba(22, 101, 52, 0.04);
-    }
-    .dropzone-icon {
-      width: 48px;
-      height: 48px;
-      border-radius: var(--radius-full);
-      background: white;
-      border: 1px solid var(--color-border);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: var(--space-1);
-    }
-    .dropzone-title {
-      font-size: var(--text-sm);
-      font-weight: 600;
-      color: var(--color-text);
-      margin: 0;
-    }
-    .dropzone-subtitle {
-      font-size: var(--text-xs);
-      color: var(--color-text-secondary);
-      margin: 2px 0 6px 0;
-    }
-    .dropzone-hint {
-      display: inline-block;
-      font-size: 11px;
-      color: var(--color-text-tertiary);
-      background: white;
-      padding: 3px 10px;
-      border-radius: var(--radius-full);
-      border: 1px solid var(--color-border);
-    }
-    .uploaded-image-card {
-      display: flex;
-      gap: var(--space-4);
-      padding: var(--space-4);
-      background: var(--color-bg-secondary);
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-md);
-      align-items: center;
-    }
-    .image-preview-frame {
-      width: 140px;
-      height: 105px;
-      border-radius: var(--radius-sm);
-      overflow: hidden;
-      flex-shrink: 0;
-      border: 1px solid var(--color-border);
-      background: white;
-    }
-    .image-preview-frame img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
-    .uploaded-image-details {
-      flex: 1;
-      min-width: 0;
-    }
-    .image-status-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--color-primary);
-      background: rgba(22, 101, 52, 0.08);
-      padding: 3px 8px;
-      border-radius: var(--radius-full);
-    }
-    .image-filename {
-      font-size: var(--text-xs);
-      font-weight: 500;
-      color: var(--color-text);
-      margin: 6px 0 0 0;
-      word-break: break-all;
-    }
-    .uploaded-image-actions {
-      display: flex;
-      gap: var(--space-2);
-      flex-wrap: wrap;
-    }
-    .image-error-alert {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: var(--text-xs);
-      color: #dc2626;
-      background: #fef2f2;
-      border: 1px solid #fecaca;
-      padding: 6px 12px;
-      border-radius: var(--radius-sm);
-    }
-
-    .nutrition-inputs-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: var(--space-3);
-    }
-    .highlight-input .form-control {
-      border-color: var(--color-primary);
-    }
-
-    .border-top {
-      border-top: 1px solid var(--color-border);
-    }
-
-    .alert-danger {
-      background: var(--color-danger-bg);
-      color: #991B1B;
-      padding: 12px 14px;
-      border-radius: var(--radius);
-      display: flex;
-      align-items: center;
-      gap: var(--space-3);
-    }
-
-    @media (max-width: 900px) {
+  styles: [
+    `
+      .seller-layout {
+        display: flex;
+        min-height: 100vh;
+        background: var(--color-bg-secondary);
+      }
       .seller-main-content {
-        margin-left: 0;
-        padding: var(--space-4);
+        flex: 1;
+        margin-left: var(--sidebar-width);
+        padding: var(--space-8) var(--space-6);
+      }
+      .seller-container {
+        max-width: var(--container-narrow);
+        margin: 0 auto;
+      }
+
+      .form-card {
+        padding: var(--space-8);
+        border: 1px solid var(--color-border);
+        background: white;
+        border-radius: var(--radius-md);
+      }
+
+      .section-divider {
+        padding-bottom: var(--space-2);
+        border-bottom: 1px solid var(--color-border);
+        margin-bottom: var(--space-4);
+      }
+      .sec-title {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--color-primary);
+      }
+
+      .image-upload-section {
+        margin-bottom: var(--space-4);
+      }
+      .dropzone-box {
+        border: 2px dashed var(--color-border);
+        border-radius: var(--radius-md);
+        padding: var(--space-6) var(--space-4);
+        background: var(--color-bg-secondary);
+        text-align: center;
+        cursor: pointer;
+        transition: all var(--transition-fast);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: var(--space-2);
+      }
+      .dropzone-box:hover,
+      .dropzone-box.is-dragover {
+        border-color: var(--color-primary);
+        background: rgba(22, 101, 52, 0.04);
+      }
+      .dropzone-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: var(--radius-full);
+        background: white;
+        border: 1px solid var(--color-border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: var(--space-1);
+      }
+      .dropzone-title {
+        font-size: var(--text-sm);
+        font-weight: 600;
+        color: var(--color-text);
+        margin: 0;
+      }
+      .dropzone-subtitle {
+        font-size: var(--text-xs);
+        color: var(--color-text-secondary);
+        margin: 2px 0 6px 0;
+      }
+      .dropzone-hint {
+        display: inline-block;
+        font-size: 11px;
+        color: var(--color-text-tertiary);
+        background: white;
+        padding: 3px 10px;
+        border-radius: var(--radius-full);
+        border: 1px solid var(--color-border);
       }
       .uploaded-image-card {
-        flex-direction: column;
-        align-items: flex-start;
+        display: flex;
+        gap: var(--space-4);
+        padding: var(--space-4);
+        background: var(--color-bg-secondary);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        align-items: center;
       }
       .image-preview-frame {
+        width: 140px;
+        height: 105px;
+        border-radius: var(--radius-sm);
+        overflow: hidden;
+        flex-shrink: 0;
+        border: 1px solid var(--color-border);
+        background: white;
+      }
+      .image-preview-frame img {
         width: 100%;
-        height: 180px;
+        height: 100%;
+        object-fit: cover;
+        display: block;
       }
+      .uploaded-image-details {
+        flex: 1;
+        min-width: 0;
+      }
+      .image-status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--color-primary);
+        background: rgba(22, 101, 52, 0.08);
+        padding: 3px 8px;
+        border-radius: var(--radius-full);
+      }
+      .image-filename {
+        font-size: var(--text-xs);
+        font-weight: 500;
+        color: var(--color-text);
+        margin: 6px 0 0 0;
+        word-break: break-all;
+      }
+      .uploaded-image-actions {
+        display: flex;
+        gap: var(--space-2);
+        flex-wrap: wrap;
+      }
+      .image-error-alert {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: var(--text-xs);
+        color: #dc2626;
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        padding: 6px 12px;
+        border-radius: var(--radius-sm);
+      }
+
       .nutrition-inputs-grid {
-        grid-template-columns: repeat(2, 1fr);
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: var(--space-3);
       }
-    }
-  `]
+      .highlight-input .form-control {
+        border-color: var(--color-primary);
+      }
+
+      .border-top {
+        border-top: 1px solid var(--color-border);
+      }
+
+      .alert-danger {
+        background: var(--color-danger-bg);
+        color: #991b1b;
+        padding: 12px 14px;
+        border-radius: var(--radius);
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+      }
+
+      @media (max-width: 900px) {
+        .seller-main-content {
+          margin-left: 0;
+          padding: var(--space-4);
+        }
+        .uploaded-image-card {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+        .image-preview-frame {
+          width: 100%;
+          height: 180px;
+        }
+        .nutrition-inputs-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+    `,
+  ],
 })
 export class AddProductComponent implements OnInit {
   private cdr = inject(ChangeDetectorRef); // the app is zoneless: refresh the screen after async work
@@ -501,14 +546,14 @@ export class AddProductComponent implements OnInit {
     name: '',
     description: '',
     category: 'Protein Bowls',
-    price: 250.00,
+    price: 250.0,
     imageUrl: '',
     nutrition: {
       servingSize: '1 bowl (400g)',
       calories: 450,
       protein: 40,
       carbs: 35,
-      fat: 12
+      fat: 12,
     },
     stock: 25,
     isAvailable: true,
@@ -516,7 +561,7 @@ export class AddProductComponent implements OnInit {
     nutritionSourceUrl: '',
     nutritionStatus: 'pending',
     createdAt: new Date(),
-    updatedAt: new Date()
+    updatedAt: new Date(),
   };
   proofErrors: ProofErrors = {};
   proofState = { confirmed: false };
@@ -525,7 +570,7 @@ export class AddProductComponent implements OnInit {
     private authService: AuthService,
     private productService: ProductService,
     private sellerService: SellerService,
-    private router: Router
+    private router: Router,
   ) {}
 
   ngOnInit() {
@@ -545,7 +590,7 @@ export class AddProductComponent implements OnInit {
 
   sellerStatus(): string {
     const user = this.authService.user();
-    return user ? (this.sellerService.getSellerStatus(user.id) || 'pending') : 'pending';
+    return user ? this.sellerService.getSellerStatus(user.id) || 'pending' : 'pending';
   }
 
   onDragOver(event: DragEvent) {
@@ -645,9 +690,12 @@ export class AddProductComponent implements OnInit {
     this.isSaving = false;
     this.cdr.markForCheck();
     if (!saved) {
-      alert('Could not save your meal. Check that every field is filled in correctly (stock must be a whole number), then try again.');
+      alert(
+        'Could not save your meal. Check that every field is filled in correctly (stock must be a whole number), then try again.',
+      );
       return;
     }
+    this.productService.notifyAdminsForReview(this.product, true); // [ADMIN-INBOX]
     this.router.navigate(['/seller/products']);
   }
 }

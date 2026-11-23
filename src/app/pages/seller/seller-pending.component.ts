@@ -79,6 +79,9 @@ import { CloudStoreService } from '../../services/cloud-store.service';
                         'Commercial food license requirements were not fulfilled.'
                     }}
                   </p>
+                  <p class="text-xs mt-2">
+                    This decision is final. A rejected application cannot be resubmitted.
+                  </p>
                 </div>
               </div>
             </div>
@@ -119,17 +122,8 @@ import { CloudStoreService } from '../../services/cloud-store.service';
           </div>
 
           <!-- [APPEAL] Fix the documents and resubmit the same application (no new account needed) -->
-          <div
-            class="card appeal-card mb-6"
-            *ngIf="application.status === 'rejected' || application.status === 'info_required'"
-          >
-            <h3>
-              {{
-                application.status === 'rejected'
-                  ? 'Appeal and resubmit your application'
-                  : 'Send the missing documents'
-              }}
-            </h3>
+          <div class="card appeal-card mb-6" *ngIf="application.status === 'info_required'">
+            <h3>Send the missing documents</h3>
             <p class="text-xs text-secondary mt-1">
               You do <strong>not</strong> need a new account. Replace the documents the admin asked
               about, explain what you fixed, and send the same application back for review.
@@ -209,11 +203,7 @@ import { CloudStoreService } from '../../services/cloud-store.service';
 
               <div class="form-group mt-4">
                 <label class="form-label" for="appealNote">
-                  {{
-                    application.status === 'rejected'
-                      ? 'Your appeal / what you corrected'
-                      : 'Note to the admin'
-                  }}
+                  Note to the admin
                   <span class="text-danger">*</span>
                 </label>
                 <textarea
@@ -479,7 +469,10 @@ export class SellerPendingComponent implements OnInit {
   // Reload this screen whenever Firestore data changes (new application, approval, etc.).
   private liveRefresh = effect(() => {
     this.cloud.version();
-    untracked(() => this.ngOnInit());
+    untracked(() => {
+      this.ngOnInit();
+      this.cdr.markForCheck(); // [LIVE] tell Angular to redraw, so no click is needed to see the new status
+    });
   });
 
   application: SellerApplication | undefined;
@@ -596,7 +589,7 @@ export class SellerPendingComponent implements OnInit {
   }
 
   async submitAppeal() {
-    if (!this.application) return;
+    if (!this.application || this.application.status !== 'info_required') return;
     this.appealError = '';
     if (this.appealNote.trim().length < 10) {
       this.appealError =

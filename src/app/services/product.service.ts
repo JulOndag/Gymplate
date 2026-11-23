@@ -20,10 +20,13 @@ export interface ProductFilters {
 
 @Injectable({ providedIn: 'root' })
 export class ProductService {
-  constructor(private mockData: MockDataService, private cloud: CloudStoreService) {}
+  constructor(
+    private mockData: MockDataService,
+    private cloud: CloudStoreService,
+  ) {}
 
   getProducts(): Product[] {
-    return this.mockData.getProducts().filter(p => !p.isDisabled && !p.isArchived);
+    return this.mockData.getProducts().filter((p) => !p.isDisabled && !p.isArchived);
   }
 
   getAllProducts(): Product[] {
@@ -37,11 +40,13 @@ export class ProductService {
   /** A seller's meals. Archived meals are left out unless `includeArchived` is true. */
   getProductsBySeller(sellerId: string, includeArchived = false): Product[] {
     const list = this.mockData.getProductsBySellerId(sellerId);
-    return includeArchived ? list : list.filter(p => !p.isArchived);
+    return includeArchived ? list : list.filter((p) => !p.isArchived);
   }
 
   getAvailableProducts(): Product[] {
-    return this.mockData.getProducts().filter(p => p.isAvailable && !p.isDisabled && !p.isArchived && p.stock > 0);
+    return this.mockData
+      .getProducts()
+      .filter((p) => p.isAvailable && !p.isDisabled && !p.isArchived && p.stock > 0);
   }
 
   getCategories(): Category[] {
@@ -57,7 +62,8 @@ export class ProductService {
     const list = this.getCategories().filter((c) => used.has(c.name));
     const known = new Set(list.map((c) => c.name));
     used.forEach((name) => {
-      if (name && !known.has(name)) list.push({ id: 'cat-' + name, name, description: '', isActive: true });
+      if (name && !known.has(name))
+        list.push({ id: 'cat-' + name, name, description: '', isActive: true });
     });
     return list;
   }
@@ -67,6 +73,30 @@ export class ProductService {
     const ok = await this.cloud.saveProduct(product);
     if (ok) this.mockData.upsertProduct(product);
     return ok;
+  }
+
+  /**
+   * [ADMIN-INBOX] Tell the admins a meal is waiting for nutrition review.
+   * It goes to the shared 'admins' inbox, because a seller cannot look up the admins' accounts.
+   */
+  notifyAdminsForReview(product: Product, isNew: boolean): void {
+    const kitchen =
+      this.mockData.getBusinessBySellerId(product.sellerId)?.businessName || 'A kitchen';
+    const now = Date.now();
+    void this.cloud.saveNotification({
+      id: 'notif-' + now + '-admins-' + product.id,
+      userId: 'admins',
+      type: 'system',
+      title: isNew ? 'New meal waiting for review' : 'Meal updated, review again',
+      message:
+        `${kitchen} ${isNew ? 'added' : 'changed the nutrition of'} "${product.name}". Check its nutrition proof and verify it.`.slice(
+          0,
+          480,
+        ),
+      isRead: false,
+      link: '/admin/products',
+      createdAt: new Date(now),
+    } as never);
   }
 
   async updateProduct(product: Product): Promise<boolean> {
@@ -79,7 +109,13 @@ export class ProductService {
   async archiveProduct(id: string): Promise<boolean> {
     const p = this.mockData.getProduct(id);
     if (!p) return false;
-    return this.updateProduct({ ...p, isArchived: true, archivedAt: new Date(), isAvailable: false, updatedAt: new Date() });
+    return this.updateProduct({
+      ...p,
+      isArchived: true,
+      archivedAt: new Date(),
+      isAvailable: false,
+      updatedAt: new Date(),
+    });
   }
 
   /** Bring an archived meal back. It returns paused, so the seller decides when to sell it again. */
@@ -98,18 +134,28 @@ export class ProductService {
 
   // [SAMPLE-FS #3] Adds the sample meals to THIS seller's kitchen through the normal save
   // (so the Firestore rules still apply). Meals already imported are skipped.
-  async importSampleMeals(set: 'demo' | 'extra', sellerId: string, businessId: string):
-      Promise<{ added: number; skipped: number; failed: number }> {
+  async importSampleMeals(
+    set: 'demo' | 'extra',
+    sellerId: string,
+    businessId: string,
+  ): Promise<{ added: number; skipped: number; failed: number }> {
     const list = set === 'demo' ? DEMO_MEALS : EXTRA_MEALS;
-    const existing = new Set(this.mockData.getProductsBySellerId(sellerId).map(p => p.id));
-    let added = 0, skipped = 0, failed = 0;
+    const existing = new Set(this.mockData.getProductsBySellerId(sellerId).map((p) => p.id));
+    let added = 0,
+      skipped = 0,
+      failed = 0;
     for (let i = 0; i < list.length; i++) {
       const m = list[i];
       const id = `smp-${set}-${i + 1}-${sellerId.slice(0, 6)}`;
-      if (existing.has(id)) { skipped++; continue; }
+      if (existing.has(id)) {
+        skipped++;
+        continue;
+      }
       const now = new Date();
       const product: Product = {
-        id, sellerId, businessId,
+        id,
+        sellerId,
+        businessId,
         name: m.name,
         description: m.description,
         category: m.category,
@@ -121,11 +167,12 @@ export class ProductService {
         isDisabled: false,
         nutritionSourceUrl: 'https://fdc.nal.usda.gov/', // [NUTRITION-REVIEW] sample meals point to USDA FoodData Central
         nutritionSourceType: 'usda',
-        ingredients: 'Sample demo data. The seller should replace this with the real ingredients and weights.',
+        ingredients:
+          'Sample demo data. The seller should replace this with the real ingredients and weights.',
         nutritionEvidenceUrl: SAMPLE_EVIDENCE,
         nutritionStatus: 'pending',
         createdAt: now,
-        updatedAt: now
+        updatedAt: now,
       };
       (await this.addProduct(product)) ? added++ : failed++;
     }
@@ -138,37 +185,38 @@ export class ProductService {
     // Search
     if (filters.search) {
       const search = filters.search.toLowerCase();
-      result = result.filter(p =>
-        p.name.toLowerCase().includes(search) ||
-        p.description.toLowerCase().includes(search) ||
-        p.category.toLowerCase().includes(search)
+      result = result.filter(
+        (p) =>
+          p.name.toLowerCase().includes(search) ||
+          p.description.toLowerCase().includes(search) ||
+          p.category.toLowerCase().includes(search),
       );
     }
 
     // Category
     if (filters.category && filters.category !== 'all') {
-      result = result.filter(p => p.category === filters.category);
+      result = result.filter((p) => p.category === filters.category);
     }
 
     // Quick filters
     switch (filters.quickFilter) {
       case 'high_protein':
-        result = result.filter(p => p.nutrition.protein >= 25);
+        result = result.filter((p) => p.nutrition.protein >= 25);
         break;
       case 'low_calorie':
-        result = result.filter(p => p.nutrition.calories <= 350);
+        result = result.filter((p) => p.nutrition.calories <= 350);
         break;
       case 'under_500':
-        result = result.filter(p => p.nutrition.calories < 500);
+        result = result.filter((p) => p.nutrition.calories < 500);
         break;
     }
 
     // Custom calorie range
     if (filters.minCalories !== undefined) {
-      result = result.filter(p => p.nutrition.calories >= filters.minCalories!);
+      result = result.filter((p) => p.nutrition.calories >= filters.minCalories!);
     }
     if (filters.maxCalories !== undefined) {
-      result = result.filter(p => p.nutrition.calories <= filters.maxCalories!);
+      result = result.filter((p) => p.nutrition.calories <= filters.maxCalories!);
     }
 
     // Sort

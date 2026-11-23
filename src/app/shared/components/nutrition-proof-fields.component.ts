@@ -27,12 +27,18 @@ import { compressImageToDataUrl } from '../utils/image.util';
           [(ngModel)]="product.ingredients"
           [ngModelOptions]="{ standalone: true }"
         ></textarea>
-        <small class="text-xs text-secondary">Customers and admins use this to check the numbers.</small>
-        <small class="text-xs text-danger block" *ngIf="errors.ingredients">{{ errors.ingredients }}</small>
+        <small class="text-xs text-secondary"
+          >Customers and admins use this to check the numbers.</small
+        >
+        <small class="text-xs text-danger block" *ngIf="errors.ingredients">{{
+          errors.ingredients
+        }}</small>
       </div>
 
       <div class="form-group mt-3">
-        <label class="form-label">Reference source of the values <span class="text-danger">*</span></label>
+        <label class="form-label"
+          >Reference source of the values <span class="text-danger">*</span></label
+        >
         <select
           class="form-control"
           [(ngModel)]="product.nutritionSourceType"
@@ -48,7 +54,9 @@ import { compressImageToDataUrl } from '../utils/image.util';
         <label class="form-label">
           Reference link
           <span class="text-danger" *ngIf="linkRequired()">*</span>
-          <span class="text-secondary text-xs" *ngIf="!linkRequired()">(optional for this source)</span>
+          <span class="text-secondary text-xs" *ngIf="!linkRequired()"
+            >(optional for this source)</span
+          >
         </label>
         <input
           type="url"
@@ -101,13 +109,19 @@ import { compressImageToDataUrl } from '../utils/image.util';
               <span>Evidence photo uploaded</span>
             </div>
             <p class="image-filename" *ngIf="fileName">{{ fileName }}</p>
-            <p class="text-xs text-secondary mt-1">The admin compares this photo with the numbers you entered.</p>
+            <p class="text-xs text-secondary mt-1">
+              The admin compares this photo with the numbers you entered.
+            </p>
             <div class="uploaded-image-actions mt-3">
               <button type="button" class="btn btn-outline btn-sm" (click)="evFile.click()">
                 <app-icon name="upload" [size]="14"></app-icon>
                 Change Photo
               </button>
-              <button type="button" class="btn btn-ghost btn-sm text-danger" (click)="clearEvidence(evFile)">
+              <button
+                type="button"
+                class="btn btn-ghost btn-sm text-danger"
+                (click)="clearEvidence(evFile)"
+              >
                 <app-icon name="trash" [size]="14"></app-icon>
                 Remove Photo
               </button>
@@ -119,44 +133,188 @@ import { compressImageToDataUrl } from '../utils/image.util';
           <app-icon name="alert-circle" [size]="15" color="#dc2626"></app-icon>
           <span>{{ uploadError }}</span>
         </div>
-        <small class="text-xs text-danger block" *ngIf="errors.evidence">{{ errors.evidence }}</small>
+        <small class="text-xs text-danger block" *ngIf="errors.evidence">{{
+          errors.evidence
+        }}</small>
       </div>
 
       <div class="calorie-hint" [class.bad]="!!errors.calories">
-        Calories from your macros: <strong>about {{ calc() }} kcal</strong>
-        (protein &times; 4 + carbs &times; 4 + fat &times; 9). You entered {{ product.nutrition.calories }} kcal.
+        Calories from your macros: <strong>about {{ calc() }} kcal</strong> (protein &times; 4 +
+        carbs &times; 4 + fat &times; 9). You entered {{ product.nutrition.calories }} kcal.
       </div>
       <div class="proof-error" *ngIf="errors.calories">{{ errors.calories }}</div>
+      <div class="proof-error" *ngIf="errors.serving">{{ errors.serving }}</div>
+      <div class="proof-error" *ngIf="errors.weight">{{ errors.weight }}</div>
+      <div class="proof-error" *ngIf="errors.reference">{{ errors.reference }}</div>
 
       <label class="confirm-row">
-        <input type="checkbox" [(ngModel)]="state.confirmed" [ngModelOptions]="{ standalone: true }" />
+        <input
+          type="checkbox"
+          [(ngModel)]="state.confirmed"
+          [ngModelOptions]="{ standalone: true }"
+        />
         <span>I confirm these values are accurate to the best of my knowledge.</span>
       </label>
       <small class="text-xs text-danger block" *ngIf="errors.confirm">{{ errors.confirm }}</small>
     </div>
   `,
-  styles: [`
-    .proof-box { margin-top: 16px; padding: 16px; border: 1px solid var(--color-border); border-radius: 12px; background: var(--color-bg-secondary); }
-    .dropzone-box { border: 2px dashed var(--color-border); border-radius: var(--radius-md); padding: var(--space-6) var(--space-4); background: #fff; text-align: center; cursor: pointer; transition: all var(--transition-fast); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-2); }
-    .dropzone-box:hover, .dropzone-box.is-dragover { border-color: var(--color-primary); background: rgba(22, 101, 52, 0.04); }
-    .dropzone-icon { width: 48px; height: 48px; border-radius: var(--radius-full); background: white; border: 1px solid var(--color-border); display: flex; align-items: center; justify-content: center; margin-bottom: var(--space-1); }
-    .dropzone-title { font-size: var(--text-sm); font-weight: 600; color: var(--color-text); margin: 0; }
-    .dropzone-subtitle { font-size: var(--text-xs); color: var(--color-text-secondary); margin: 2px 0 6px 0; }
-    .dropzone-hint { display: inline-block; font-size: 11px; color: var(--color-text-tertiary); background: white; padding: 3px 10px; border-radius: var(--radius-full); border: 1px solid var(--color-border); }
-    .uploaded-image-card { display: flex; gap: var(--space-4); padding: var(--space-4); background: #fff; border: 1px solid var(--color-border); border-radius: var(--radius-md); align-items: center; flex-wrap: wrap; }
-    .image-preview-frame { width: 140px; height: 105px; border-radius: var(--radius-sm); overflow: hidden; flex-shrink: 0; border: 1px solid var(--color-border); background: white; }
-    .image-preview-frame img { width: 100%; height: 100%; object-fit: cover; display: block; }
-    .uploaded-image-details { flex: 1; min-width: 180px; }
-    .image-status-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; color: var(--color-primary); background: rgba(22, 101, 52, 0.08); padding: 3px 8px; border-radius: var(--radius-full); }
-    .image-filename { font-size: var(--text-xs); font-weight: 500; color: var(--color-text); margin: 6px 0 0 0; word-break: break-all; }
-    .uploaded-image-actions { display: flex; gap: var(--space-2); flex-wrap: wrap; }
-    .image-error-alert { display: flex; align-items: center; gap: 6px; font-size: var(--text-xs); color: #dc2626; background: #fef2f2; border: 1px solid #fecaca; padding: 6px 12px; border-radius: var(--radius-sm); }
-    .calorie-hint { margin-top: 14px; font-size: 12.5px; padding: 9px 12px; border-radius: 9px; background: #fff; border: 1px solid var(--color-border); color: var(--color-text-secondary); }
-    .calorie-hint.bad { border-color: var(--color-danger); }
-    .proof-error { margin-top: 8px; padding: 10px 12px; border-radius: 9px; background: #fdecec; color: #a12828; font-size: 12.5px; }
-    .confirm-row { display: flex; gap: 10px; align-items: center; margin-top: 14px; font-size: 13px; cursor: pointer; }
-    .confirm-row input { width: 18px; height: 18px; accent-color: var(--color-primary); }
-  `],
+  styles: [
+    `
+      .proof-box {
+        margin-top: 16px;
+        padding: 16px;
+        border: 1px solid var(--color-border);
+        border-radius: 12px;
+        background: var(--color-bg-secondary);
+      }
+      .dropzone-box {
+        border: 2px dashed var(--color-border);
+        border-radius: var(--radius-md);
+        padding: var(--space-6) var(--space-4);
+        background: #fff;
+        text-align: center;
+        cursor: pointer;
+        transition: all var(--transition-fast);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: var(--space-2);
+      }
+      .dropzone-box:hover,
+      .dropzone-box.is-dragover {
+        border-color: var(--color-primary);
+        background: rgba(22, 101, 52, 0.04);
+      }
+      .dropzone-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: var(--radius-full);
+        background: white;
+        border: 1px solid var(--color-border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: var(--space-1);
+      }
+      .dropzone-title {
+        font-size: var(--text-sm);
+        font-weight: 600;
+        color: var(--color-text);
+        margin: 0;
+      }
+      .dropzone-subtitle {
+        font-size: var(--text-xs);
+        color: var(--color-text-secondary);
+        margin: 2px 0 6px 0;
+      }
+      .dropzone-hint {
+        display: inline-block;
+        font-size: 11px;
+        color: var(--color-text-tertiary);
+        background: white;
+        padding: 3px 10px;
+        border-radius: var(--radius-full);
+        border: 1px solid var(--color-border);
+      }
+      .uploaded-image-card {
+        display: flex;
+        gap: var(--space-4);
+        padding: var(--space-4);
+        background: #fff;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .image-preview-frame {
+        width: 140px;
+        height: 105px;
+        border-radius: var(--radius-sm);
+        overflow: hidden;
+        flex-shrink: 0;
+        border: 1px solid var(--color-border);
+        background: white;
+      }
+      .image-preview-frame img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+      .uploaded-image-details {
+        flex: 1;
+        min-width: 180px;
+      }
+      .image-status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--color-primary);
+        background: rgba(22, 101, 52, 0.08);
+        padding: 3px 8px;
+        border-radius: var(--radius-full);
+      }
+      .image-filename {
+        font-size: var(--text-xs);
+        font-weight: 500;
+        color: var(--color-text);
+        margin: 6px 0 0 0;
+        word-break: break-all;
+      }
+      .uploaded-image-actions {
+        display: flex;
+        gap: var(--space-2);
+        flex-wrap: wrap;
+      }
+      .image-error-alert {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: var(--text-xs);
+        color: #dc2626;
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        padding: 6px 12px;
+        border-radius: var(--radius-sm);
+      }
+      .calorie-hint {
+        margin-top: 14px;
+        font-size: 12.5px;
+        padding: 9px 12px;
+        border-radius: 9px;
+        background: #fff;
+        border: 1px solid var(--color-border);
+        color: var(--color-text-secondary);
+      }
+      .calorie-hint.bad {
+        border-color: var(--color-danger);
+      }
+      .proof-error {
+        margin-top: 8px;
+        padding: 10px 12px;
+        border-radius: 9px;
+        background: #fdecec;
+        color: #a12828;
+        font-size: 12.5px;
+      }
+      .confirm-row {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        margin-top: 14px;
+        font-size: 13px;
+        cursor: pointer;
+      }
+      .confirm-row input {
+        width: 18px;
+        height: 18px;
+        accent-color: var(--color-primary);
+      }
+    `,
+  ],
 })
 export class NutritionProofFieldsComponent {
   private cdr = inject(ChangeDetectorRef);
