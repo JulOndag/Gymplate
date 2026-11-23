@@ -88,6 +88,7 @@ import { OrderProgressComponent } from '../../shared/components/order-progress.c
                   <button
                     *ngIf="
                       target !== 'cancelled' &&
+                      target !== 'out_for_delivery' &&
                       !(order.status === 'pending' && target === 'preparing')
                     "
                     class="btn btn-primary btn-sm"
@@ -96,6 +97,23 @@ import { OrderProgressComponent } from '../../shared/components/order-progress.c
                     {{ getTransitionButtonLabel(target) }}
                   </button>
                 </ng-container>
+              </div>
+
+              <!-- [RIDER] a delivery needs a rider before it leaves the kitchen -->
+              <div class="rider-box" *ngIf="validTransitions.includes('out_for_delivery')">
+                <strong class="text-xs">Assign a rider to dispatch this delivery</strong>
+                <div class="rider-fields">
+                  <input class="form-control" placeholder="Rider name" [(ngModel)]="rider.name" maxlength="60" />
+                  <input class="form-control" placeholder="Rider phone (e.g. 0917 123 4567)" [(ngModel)]="rider.phone" maxlength="20" />
+                  <input class="form-control" placeholder="Vehicle / plate no. (optional)" [(ngModel)]="rider.plate" maxlength="20" />
+                  <button class="btn btn-primary btn-sm" (click)="dispatch()">Dispatch Courier</button>
+                </div>
+                <small class="text-xs text-danger block" *ngIf="riderError">{{ riderError }}</small>
+                <small class="text-xs text-secondary">The customer will see the rider's name and phone number on their order page.</small>
+              </div>
+
+              <div class="text-xs mt-2" *ngIf="order.riderName">
+                <strong>Rider:</strong> {{ order.riderName }} &bull; {{ order.riderPhone }}<span *ngIf="order.riderPlate"> &bull; {{ order.riderPlate }}</span>
               </div>
 
               <span class="text-xs font-semibold text-primary" *ngIf="order.estimatedReadyAt">
@@ -256,6 +274,27 @@ import { OrderProgressComponent } from '../../shared/components/order-progress.c
         gap: var(--space-2);
         flex-wrap: wrap;
       }
+      .rider-box {
+        margin-top: var(--space-3);
+        padding: var(--space-3);
+        border: 1px dashed var(--color-border);
+        border-radius: var(--radius);
+        background: var(--color-bg-secondary);
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+        width: 100%;
+      }
+      .rider-fields {
+        display: flex;
+        gap: var(--space-2);
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      .rider-fields .form-control {
+        flex: 1 1 160px;
+        min-width: 140px;
+      }
       .minutes-box {
         display: flex;
         align-items: center;
@@ -380,6 +419,8 @@ export class SellerOrderDetailComponent implements OnInit {
   validTransitions: OrderStatus[] = [];
   minuteOptions = [10, 15, 20, 30]; // preparation times the seller can choose
   isReceiptOpen = false;
+  rider = { name: '', phone: '', plate: '' };
+  riderError = '';
 
   // [LIVE] reload this screen when Firestore sends new data (no page refresh needed)
   private live = liveRefresh(() => this.ngOnInit());
@@ -465,6 +506,34 @@ export class SellerOrderDetailComponent implements OnInit {
       }
     } else {
       alert(res.message);
+    }
+  }
+
+  /** [RIDER] move a delivery order to "Out for delivery" together with the rider's details. */
+  dispatch() {
+    if (!this.order) return;
+    this.riderError = '';
+    if (this.rider.name.trim().length < 2 || !/^[0-9+()\-\s]{7,20}$/.test(this.rider.phone.trim())) {
+      this.riderError = "Enter the rider's name and a valid phone number.";
+      return;
+    }
+    const res = this.orderService.updateOrderStatus(
+      this.order.id,
+      'out_for_delivery',
+      `Dispatched with rider ${this.rider.name.trim()}`,
+      undefined,
+      { name: this.rider.name, phone: this.rider.phone, plate: this.rider.plate },
+    );
+    if (res.success) {
+      this.order = this.orderService.getOrder(this.order.id);
+      if (this.order) {
+        this.validTransitions = this.orderService.getValidTransitions(
+          this.order.status,
+          this.order.fulfillmentType,
+        );
+      }
+    } else {
+      this.riderError = res.message;
     }
   }
 

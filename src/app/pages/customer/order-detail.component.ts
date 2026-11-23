@@ -323,6 +323,44 @@ import { OrderProgressComponent } from '../../shared/components/order-progress.c
                 <span class="lbl">Delivery Address:</span>
                 <span class="val">{{ order.customerAddress }}</span>
               </div>
+
+              <!-- [RIDER] who is bringing the order -->
+              <ng-container *ngIf="order.fulfillmentType === 'delivery'">
+                <div class="info-block" *ngIf="order.riderName; else noRider">
+                  <span class="lbl">Rider:</span>
+                  <span class="val font-semibold">{{ order.riderName }}</span>
+                </div>
+                <div class="info-block" *ngIf="order.riderName">
+                  <span class="lbl">Rider Phone:</span>
+                  <span class="val"><a [href]="'tel:' + order.riderPhone">{{ order.riderPhone }}</a></span>
+                </div>
+                <div class="info-block" *ngIf="order.riderPlate">
+                  <span class="lbl">Vehicle / Plate:</span>
+                  <span class="val">{{ order.riderPlate }}</span>
+                </div>
+                <ng-template #noRider>
+                  <div class="info-block">
+                    <span class="lbl">Rider:</span>
+                    <span class="val text-secondary">Assigned when the kitchen dispatches your order</span>
+                  </div>
+                </ng-template>
+              </ng-container>
+
+              <!-- [PICKUP] where to collect the order -->
+              <ng-container *ngIf="order.fulfillmentType === 'pickup' && kitchen() as k">
+                <div class="info-block">
+                  <span class="lbl">Pickup Address:</span>
+                  <span class="val font-semibold">{{ k.businessName }}, {{ k.address }}, {{ k.city }}</span>
+                </div>
+                <div class="info-block" *ngIf="k.operatingHours">
+                  <span class="lbl">Kitchen Hours:</span>
+                  <span class="val">{{ k.operatingHours }}</span>
+                </div>
+                <div class="info-block" *ngIf="k.phone">
+                  <span class="lbl">Kitchen Phone:</span>
+                  <span class="val"><a [href]="'tel:' + k.phone">{{ k.phone }}</a></span>
+                </div>
+              </ng-container>
               <div class="info-block">
                 <span class="lbl">Contact Phone:</span>
                 <span class="val">{{ order.customerPhone }}</span>
@@ -718,6 +756,11 @@ export class OrderDetailComponent implements OnInit {
     private mockData: MockDataService,
     private reportService: ReportService,
   ) {}
+
+  /** The kitchen's saved details (address, hours, phone) for the pickup information. */
+  kitchen() {
+    return this.order ? this.mockData.getBusinessBySellerId(this.order.sellerId) : undefined;
+  }
 
   ngOnInit() {
     const id = this.route.snapshot.paramMap.get('id');

@@ -24,6 +24,29 @@ export class SellerService {
     return ok;
   }
 
+  /**
+   * [APPEAL] A rejected seller (or one asked for more information) sends the fixed documents
+   * and a note, and the same application goes back to "pending". No new account is needed.
+   */
+  async resubmitApplication(
+    app: SellerApplication,
+    documents: SellerApplication['documents'],
+    note: string,
+  ): Promise<boolean> {
+    const now = new Date();
+    const patch = {
+      documents,
+      status: 'pending' as const,
+      appealNote: note.trim(),
+      appealCount: (app.appealCount || 0) + 1,
+      resubmittedAt: now,
+      updatedAt: now,
+    };
+    const ok = await this.cloud.resubmitApplication(app.userId || app.id, patch);
+    if (ok) this.mockData.updateSellerApplication({ ...app, ...patch });
+    return ok;
+  }
+
   getBusiness(sellerId: string): Business | undefined {
     return this.mockData.getBusinessBySellerId(sellerId);
   }

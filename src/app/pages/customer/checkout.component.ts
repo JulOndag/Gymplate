@@ -94,6 +94,19 @@ import { IconComponent } from '../../shared/components/icon.component';
                 </label>
               </div>
 
+              <!-- [PICKUP] show where the order is collected -->
+              <div class="pickup-info mt-4" *ngIf="fulfillmentType === 'pickup'">
+                <strong class="text-xs">Pick up your order at</strong>
+                <p class="mt-1">{{ kitchenName() }}</p>
+                <p class="text-xs text-secondary" *ngIf="kitchenAddress()">{{ kitchenAddress() }}</p>
+                <p class="text-xs text-secondary" *ngIf="kitchenHours()">Open: {{ kitchenHours() }}</p>
+              </div>
+
+              <!-- [RIDER] delivery rider note -->
+              <p class="text-xs text-secondary mt-3" *ngIf="fulfillmentType === 'delivery'">
+                The kitchen assigns a rider when your order is dispatched. You will see the rider's name and phone number on your order page.
+              </p>
+
               <!-- Delivery Address Input if Delivery chosen -->
               <div class="delivery-address-section mt-4" *ngIf="fulfillmentType === 'delivery'">
                 <div class="form-group">
@@ -425,6 +438,15 @@ import { IconComponent } from '../../shared/components/icon.component';
         color: var(--color-text-secondary);
       }
 
+      .pickup-info {
+        padding: 12px 14px;
+        border: 1px solid var(--color-border);
+        border-radius: 12px;
+        background: var(--color-bg-secondary);
+      }
+      .pickup-info p {
+        margin: 0;
+      }
       .demo-payment-warning {
         margin-bottom: var(--space-3);
         display: flex;
@@ -552,6 +574,17 @@ export class CheckoutComponent implements OnInit {
     const sellerId = this.cartService.currentSellerId();
     const biz = sellerId ? this.mockData.getBusinessBySellerId(sellerId) : undefined;
     return biz?.businessName || this.cartService.currentBusinessName() || 'Kitchen';
+  }
+
+  kitchenAddress(): string {
+    const sellerId = this.cartService.currentSellerId();
+    const b = sellerId ? this.mockData.getBusinessBySellerId(sellerId) : undefined;
+    return b ? [b.address, b.city].filter(Boolean).join(', ') : '';
+  }
+
+  kitchenHours(): string {
+    const sellerId = this.cartService.currentSellerId();
+    return (sellerId && this.mockData.getBusinessBySellerId(sellerId)?.operatingHours) || '';
   }
 
   onFulfillmentChange() {

@@ -7,11 +7,13 @@ import { Product, Category } from '../../models';
 import { SellerSidebarComponent } from '../../shared/components/seller-sidebar.component';
 import { IconComponent } from '../../shared/components/icon.component';
 import { compressImageToDataUrl } from '../../shared/utils/image.util'; // [PRODUCTS-FS #10]
+import { NutritionProofFieldsComponent } from '../../shared/components/nutrition-proof-fields.component';
+import { ProofErrors, validateNutritionProof, hasProofErrors } from '../../shared/utils/nutrition-proof.util';
 
 @Component({
   selector: 'app-edit-product',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, SellerSidebarComponent, IconComponent],
+  imports: [CommonModule, FormsModule, RouterLink, SellerSidebarComponent, IconComponent, NutritionProofFieldsComponent],
   template: `
     <div class="seller-layout">
       <app-seller-sidebar></app-seller-sidebar>
@@ -147,23 +149,8 @@ import { compressImageToDataUrl } from '../../shared/utils/image.util'; // [PROD
                   Admin note: {{ product.nutritionReviewNote }}
                 </small>
               </div>
-              <!-- [NUTRITION-REVIEW] Reference link so the admin can check the numbers -->
-              <div class="form-group mt-4">
-                <label class="form-label" for="editNutritionSource">Nutrition Reference Link <span class="text-danger">*</span></label>
-                <input
-                  id="editNutritionSource"
-                  type="url"
-                  class="form-control"
-                  placeholder="https://... (brand page, USDA FoodData Central, label photo page)"
-                  [(ngModel)]="product.nutritionSourceUrl"
-                  name="nutritionSourceUrl"
-                  required
-                />
-                <small class="text-xs text-secondary">
-                  The admin opens this link to check your protein, carbs, fat and calories before the numbers are marked "Verified".
-                </small>
-                <small class="text-xs text-danger block" *ngIf="sourceError">{{ sourceError }}</small>
-              </div>
+              <!-- [NUTRITION-PROOF] source, link, ingredients, photo evidence, calorie check, confirmation -->
+              <app-nutrition-proof-fields *ngIf="product" [product]="product" [errors]="proofErrors" [state]="proofState"></app-nutrition-proof-fields>
 
               <!-- Stock & Availability -->
               <div class="form-row mt-4">
@@ -363,7 +350,8 @@ export class EditProductComponent implements OnInit {
   isSaving = false;
   isDragging = false;
   uploadError = '';
-  sourceError = '';
+  proofErrors: ProofErrors = {};
+  proofState = { confirmed: false };
   private originalNutrition = ''; // [NUTRITION-REVIEW] to notice when the numbers or link change
   uploadedFileName = '';
 
@@ -380,9 +368,17 @@ export class EditProductComponent implements OnInit {
       const found = this.productService.getProduct(id);
       if (found) {
         this.product = { ...found, nutrition: { ...found.nutrition } };
-        this.originalNutrition = JSON.stringify([found.nutrition, found.nutritionSourceUrl || '']);
+        this.originalNutrition = this.proofSnapshot(found);
       }
     }
+  }
+
+  /** Everything the admin checks. If any of it changes, the meal goes back to "pending". */
+  private proofSnapshot(p: Product): string {
+    return JSON.stringify([
+      p.nutrition, p.nutritionSourceUrl || '', p.nutritionSourceType || '',
+      (p.ingredients || '').trim(), p.nutritionEvidenceUrl || '',
+    ]);
   }
 
   onDragOver(event: DragEvent) {
@@ -458,14 +454,14 @@ export class EditProductComponent implements OnInit {
       return;
     }
 
-    // [NUTRITION-REVIEW] a reference link is required; changed numbers or link go back to admin review
-    this.sourceError = '';
+    // [NUTRITION-PROOF] same checks as adding a meal. Any change goes back to admin review.
     this.product.nutritionSourceUrl = (this.product.nutritionSourceUrl || '').trim();
-    if (!/^https?:\/\/\S+\.\S+/i.test(this.product.nutritionSourceUrl)) {
-      this.sourceError = 'Enter a valid link that starts with https:// where the nutrition numbers can be checked.';
+    this.proofErrors = validateNutritionProof(this.product, this.proofState.confirmed);
+    if (hasProofErrors(this.proofErrors)) {
+      this.cdr.markForCheck();
       return;
     }
-    if (JSON.stringify([this.product.nutrition, this.product.nutritionSourceUrl]) !== this.originalNutrition) {
+    if (this.proofSnapshot(this.product) !== this.originalNutrition) {
       this.product.nutritionStatus = 'pending';
     }
 

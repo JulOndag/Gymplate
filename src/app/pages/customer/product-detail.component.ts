@@ -5,7 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { ProductService } from '../../services/product.service';
 import { CartService } from '../../services/cart.service';
 import { MockDataService } from '../../services/mock-data.service';
-import { Product, Business, Review } from '../../models';
+import { Product, Business, Review, nutritionSourceLabel } from '../../models';
 import { CustomerNavComponent } from '../../shared/components/customer-nav.component';
 import { PublicFooterComponent } from '../../shared/components/public-footer.component';
 import { IconComponent } from '../../shared/components/icon.component';
@@ -79,6 +79,12 @@ import { CloudStoreService } from '../../services/cloud-store.service';
                 <div class="text-xs" style="margin-bottom:8px" *ngIf="product.nutritionStatus === 'verified'">
                   <span class="badge badge-success">&#10003; Nutrition verified by admin</span>
                   <a *ngIf="product.nutritionSourceUrl" [href]="product.nutritionSourceUrl" target="_blank" rel="noopener noreferrer" style="margin-left:8px">View source</a>
+                </div>
+                <div class="text-xs text-secondary" style="margin-bottom:8px" *ngIf="product.nutritionStatus === 'verified' && product.nutritionSourceType">
+                  Source: {{ sourceLabel(product) }}
+                </div>
+                <div class="text-xs text-secondary" style="margin-bottom:8px; white-space:pre-wrap" *ngIf="product.ingredients">
+                  <strong>Ingredients:</strong> {{ product.ingredients }}
                 </div>
                 <div class="text-xs text-secondary" style="margin-bottom:8px" *ngIf="product.nutritionStatus !== 'verified'">
                   Nutrition facts are provided by the kitchen and not yet verified by an admin.
@@ -422,6 +428,10 @@ import { CloudStoreService } from '../../services/cloud-store.service';
   `]
 })
 export class ProductDetailComponent implements OnInit {
+  sourceLabel(p: Product): string {
+    return nutritionSourceLabel(p.nutritionSourceType);
+  }
+
   // [PRODUCTS-FS #11] Refresh this screen whenever Firestore data changes
   private cloud = inject(CloudStoreService);
   private liveRefresh = effect(() => {

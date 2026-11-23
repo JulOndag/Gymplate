@@ -1937,3 +1937,16 @@ app-customer-nav ~ main .stat-icon {
   border-radius: 50%;
   background: var(--color-primary-light);
 }
+
+
+/* [CUSTOMER-BTN] one button system for every customer page: same height, radius, weight */
+.customer-ui .btn { height: 40px; padding: 0 18px; font-size: 14px; font-weight: 600; border-radius: 10px; gap: 8px; line-height: 1; }
+.customer-ui .btn-sm { height: 34px; padding: 0 14px; font-size: 13px; border-radius: 9px; }
+.customer-ui .btn-lg { height: 48px; padding: 0 26px; font-size: 15px; }
+.customer-ui .btn-icon { width: 36px; height: 36px; padding: 0; }
+.customer-ui .btn-secondary { background: #fff; color: var(--color-text); border-color: var(--color-border); }
+.customer-ui .btn-secondary:hover:not(:disabled) { background: var(--color-bg-tertiary); border-color: var(--color-border-hover); }
+.btn-outline-danger { background: #fff; color: var(--color-danger); border-color: var(--color-danger); }
+.btn-outline-danger:hover:not(:disabled) { background: var(--color-danger); color: #fff; border-color: var(--color-danger); }
+a.btn-outline-danger:hover { color: #fff; }
+.customer-ui .btn-ghost { color: var(--color-text-secondary); }

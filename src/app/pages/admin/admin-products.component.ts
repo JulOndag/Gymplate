@@ -5,7 +5,7 @@ import { ProductService } from '../../services/product.service';
 import { AdminService } from '../../services/admin.service';
 import { MockDataService } from '../../services/mock-data.service';
 import { AuthService } from '../../services/auth.service';
-import { Product } from '../../models';
+import { Product, nutritionSourceLabel } from '../../models';
 import { AdminSidebarComponent } from '../../shared/components/admin-sidebar.component';
 import { IconComponent } from '../../shared/components/icon.component';
 import { CloudStoreService } from '../../services/cloud-store.service';
@@ -164,6 +164,29 @@ import { CloudStoreService } from '../../services/cloud-store.service';
                 ><span class="macro-tag">Fat</span>
               </div>
             </div>
+          </div>
+
+          <div class="details-section">
+            <h4>Evidence from the seller</h4>
+            <p class="text-xs">
+              <strong>Source:</strong> {{ sourceLabel(d) }}
+            </p>
+            <p class="text-xs mt-1"><strong>Ingredients and weights:</strong></p>
+            <p class="text-xs text-secondary ingredients-text" *ngIf="d.ingredients; else noIngredients">{{ d.ingredients }}</p>
+            <ng-template #noIngredients
+              ><p class="text-danger text-xs">No ingredients were given (older meal).</p></ng-template
+            >
+            <div class="mt-2" *ngIf="d.nutritionEvidenceUrl; else noEvidence">
+              <img [src]="d.nutritionEvidenceUrl" alt="Evidence photo" class="evidence-img" (click)="openEvidence(d)" />
+              <div class="mt-1">
+                <button type="button" class="btn btn-outline btn-sm" (click)="openEvidence(d)">
+                  Open evidence photo full size &#8599;
+                </button>
+              </div>
+            </div>
+            <ng-template #noEvidence
+              ><p class="text-danger text-xs">No evidence photo (older meal). Ask the seller to edit the meal and add one.</p></ng-template
+            >
           </div>
 
           <div class="details-section">
@@ -607,6 +630,17 @@ import { CloudStoreService } from '../../services/cloud-store.service';
         margin: 0 0 var(--space-2);
         font-size: var(--font-size-sm);
       }
+      .evidence-img {
+        max-width: 100%;
+        max-height: 220px;
+        border-radius: 10px;
+        border: 1px solid var(--color-border);
+        cursor: zoom-in;
+        background: #fff;
+      }
+      .ingredients-text {
+        white-space: pre-wrap;
+      }
       .link-text {
         word-break: break-all;
         font-size: var(--font-size-xs);
@@ -742,6 +776,17 @@ export class AdminProductsComponent implements OnInit {
 
   closeDetails() {
     this.detailProduct = null;
+  }
+
+  sourceLabel(p: Product): string {
+    return nutritionSourceLabel(p.nutritionSourceType);
+  }
+
+  /** Browsers block data: links, so the photo is turned into a temporary link first. */
+  async openEvidence(p: Product) {
+    if (!p.nutritionEvidenceUrl) return;
+    const blob = await (await fetch(p.nutritionEvidenceUrl)).blob();
+    window.open(URL.createObjectURL(blob), '_blank', 'noopener');
   }
 
   /** What the card shows. "Approved" only appears after the admin verified the nutrition numbers. */

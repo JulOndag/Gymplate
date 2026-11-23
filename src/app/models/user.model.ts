@@ -56,6 +56,10 @@ export interface SellerApplication {
   reviewNotes?: string;
   rejectionReason?: string;
   infoRequestReason?: string;
+  /** [APPEAL] A rejected seller can fix the documents and resubmit, with a note to the admin. */
+  appealNote?: string;
+  appealCount?: number;
+  resubmittedAt?: Date;
   reviewedBy?: string;
   reviewedAt?: Date;
   submittedAt: Date;

@@ -24,7 +24,9 @@ import { IconComponent } from '../../shared/components/icon.component';
           <!-- Header -->
           <div class="page-header flex justify-between items-center flex-wrap gap-4 mb-6">
             <div>
-              <a routerLink="/admin/applications" class="back-btn"><app-icon name="arrow-left" [size]="14"></app-icon> Back to Verification Queue</a>
+              <a routerLink="/admin/applications" class="back-btn"
+                ><app-icon name="arrow-left" [size]="14"></app-icon> Back to Verification Queue</a
+              >
               <h1>Inspect Application: {{ application.businessInfo.businessName }}</h1>
               <p class="text-xs text-secondary">
                 Submitted on {{ application.submittedAt | date: 'medium' }}
@@ -66,10 +68,29 @@ import { IconComponent } from '../../shared/components/icon.component';
           </div>
 
           <!-- Existing Rejection/Notes Banner if any -->
+          <!-- [APPEAL] the seller fixed the documents and resubmitted -->
+          <div
+            class="alert alert-success mb-6"
+            *ngIf="application.status === 'pending' && application.appealNote"
+          >
+            <app-icon name="check-circle" [size]="18"></app-icon>
+            <div>
+              <strong>Resubmitted by the seller (appeal {{ application.appealCount || 1 }})</strong>
+              <p class="text-xs mt-1">Seller's note: {{ application.appealNote }}</p>
+              <p class="text-xs mt-1 text-secondary">
+                Check the replaced documents below against the earlier reason.
+              </p>
+            </div>
+          </div>
+
           <div class="alert alert-danger mb-6" *ngIf="application.rejectionReason">
             <app-icon name="alert-circle" [size]="18"></app-icon>
             <div>
-              <strong>Application Rejected</strong>
+              <strong>{{
+                application.status === 'rejected'
+                  ? 'Application Rejected'
+                  : 'Earlier rejection reason'
+              }}</strong>
               <p class="text-xs mt-1">Reason: {{ application.rejectionReason }}</p>
             </div>
           </div>
@@ -77,7 +98,11 @@ import { IconComponent } from '../../shared/components/icon.component';
           <div class="alert alert-info mb-6" *ngIf="application.infoRequestReason">
             <app-icon name="info" [size]="18"></app-icon>
             <div>
-              <strong>Additional Documentation Requested</strong>
+              <strong>{{
+                application.status === 'info_required'
+                  ? 'Additional Documentation Requested'
+                  : 'Earlier request for documents'
+              }}</strong>
               <p class="text-xs mt-1">Reason: {{ application.infoRequestReason }}</p>
             </div>
           </div>
@@ -172,9 +197,18 @@ import { IconComponent } from '../../shared/components/icon.component';
                   <div class="real-doc-preview" *ngIf="hasFile(doc) && isImg(doc)">
                     <img [src]="doc.url" [alt]="row.label" (click)="openDoc(doc)" />
                   </div>
-                  <div class="real-doc-preview pdf" *ngIf="hasFile(doc) && !isImg(doc)">PDF document</div>
-                  <div class="real-doc-preview pdf" *ngIf="!hasFile(doc)">Demo entry (no real file was uploaded)</div>
-                  <button type="button" class="btn btn-outline btn-sm mt-2" *ngIf="hasFile(doc)" (click)="openDoc(doc)">
+                  <div class="real-doc-preview pdf" *ngIf="hasFile(doc) && !isImg(doc)">
+                    PDF document
+                  </div>
+                  <div class="real-doc-preview pdf" *ngIf="!hasFile(doc)">
+                    Demo entry (no real file was uploaded)
+                  </div>
+                  <button
+                    type="button"
+                    class="btn btn-outline btn-sm mt-2"
+                    *ngIf="hasFile(doc)"
+                    (click)="openDoc(doc)"
+                  >
                     Open full size &#8599;
                   </button>
                 </ng-container>
@@ -391,6 +425,11 @@ export class AdminApplicationDetailComponent implements OnInit {
       { label: 'Government Photo ID', doc: d?.governmentId },
       { label: 'Commercial Food Permit', doc: d?.businessPermit },
       { label: 'Business Application Signed by the Government', doc: d?.signedApplication },
+      // [EXTRA-DOCS] anything extra the seller attached after the admin asked for more
+      ...(d?.supportingDocs || []).map((x, i) => ({
+        label: `Additional document ${i + 1}`,
+        doc: x,
+      })),
     ];
   }
 

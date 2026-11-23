@@ -51,6 +51,10 @@ export interface Order {
   specialInstructions?: string;
   prepMinutes?: number;
   estimatedReadyAt?: Date;
+  /** [RIDER] Filled in by the kitchen when a delivery order is dispatched. */
+  riderName?: string;
+  riderPhone?: string;
+  riderPlate?: string;
   statusHistory: { status: OrderStatus; timestamp: Date; note?: string }[];
   /** Hidden from the seller's / admin's own lists. The customer still sees the order. */
   archivedBySeller?: boolean;

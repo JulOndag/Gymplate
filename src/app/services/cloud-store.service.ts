@@ -50,7 +50,7 @@ import { MockDataService } from './mock-data.service';
  *  3. Every change is saved here (to Firestore) first. The Security Rules decide if it is allowed.
  */
 
-const DATE_KEYS = ['submittedAt', 'updatedAt', 'reviewedAt', 'createdAt', 'timestamp'];
+const DATE_KEYS = ['submittedAt', 'updatedAt', 'reviewedAt', 'createdAt', 'timestamp', 'resubmittedAt'];
 
 /** [ORDERS-FS #1] Orders have dates inside lists too (statusHistory), so turn ISO text back into Dates everywhere. */
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/;
@@ -398,6 +398,30 @@ export class CloudStoreService {
     }
   }
 
+  /** [APPEAL] Only the fields a seller may change when resubmitting a rejected application. */
+  async resubmitApplication(
+    sellerId: string,
+    patch: {
+      documents: SellerApplication['documents'];
+      status: 'pending';
+      appealNote: string;
+      appealCount: number;
+      resubmittedAt: Date;
+      updatedAt: Date;
+    },
+  ): Promise<boolean> {
+    try {
+      await updateDoc(
+        doc(firestore, 'sellerApplications', sellerId),
+        toPlain(patch) as Record<string, unknown>,
+      );
+      return true;
+    } catch (e) {
+      console.error('resubmitApplication failed:', e);
+      return false;
+    }
+  }
+
   /** Approving = update the application AND create the business, together or not at all. */
   async approveApplication(app: SellerApplication, business: Business): Promise<boolean> {
     try {
@@ -679,6 +703,9 @@ export class CloudStoreService {
         paymentStatus: order.paymentStatus,
         prepMinutes: order.prepMinutes,
         estimatedReadyAt: order.estimatedReadyAt,
+        riderName: order.riderName,
+        riderPhone: order.riderPhone,
+        riderPlate: order.riderPlate,
         updatedAt: order.updatedAt,
       }) as Record<string, unknown>;
       await updateDoc(doc(firestore, 'orders', order.id), patch);

@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { OrderService } from '../../services/order.service';
@@ -373,6 +373,7 @@ export class SellerOrdersComponent implements OnInit {
   constructor(
     private authService: AuthService,
     private orderService: OrderService,
+    private router: Router,
   ) {}
 
   ngOnInit() {
@@ -473,6 +474,12 @@ export class SellerOrdersComponent implements OnInit {
   advanceStatus(order: Order) {
     const next = this.getNextTransition(order);
     if (!next) return;
+
+    // [RIDER] a delivery needs a rider: continue on the order page
+    if (next === 'out_for_delivery') {
+      this.router.navigate(['/seller/orders', order.id]);
+      return;
+    }
 
     const res = this.orderService.updateOrderStatus(
       order.id,

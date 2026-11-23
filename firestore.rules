@@ -78,7 +78,20 @@ service cloud.firestore {
              'status', 'submittedAt', 'updatedAt']);
 
 
-      allow update: if isAdmin();
+      // [APPEAL] A rejected seller (or one asked for more information) can fix the documents and
+      // resubmit the SAME application. Only the documents, a note and the status 'pending' can change.
+      allow update: if isAdmin()
+        || (isSeller()
+            && request.auth.uid == sellerId
+            && resource.data.status in ['rejected', 'info_required']
+            && request.resource.data.status == 'pending'
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(
+                 ['documents', 'status', 'appealNote', 'appealCount', 'resubmittedAt', 'updatedAt'])
+            && request.resource.data.appealNote is string
+            && request.resource.data.appealNote.size() >= 10
+            && request.resource.data.appealNote.size() <= 1000
+            && request.resource.data.appealCount == resource.data.get('appealCount', 0) + 1
+            && request.resource.data.appealCount <= 3);
       allow delete: if false;
     }
 
@@ -127,9 +140,23 @@ service cloud.firestore {
     }
 
 
+    // [NUTRITION-PROOF] the evidence fields (source, ingredients, photo) a seller must give
+    function validProof(d) {
+      return d.nutritionSourceType in ['dost_fnri', 'usda', 'product_label', 'other']
+        && d.ingredients is string && d.ingredients.size() >= 5 && d.ingredients.size() <= 1000
+        && d.nutritionEvidenceUrl is string && d.nutritionEvidenceUrl.size() > 0
+        && d.nutritionEvidenceUrl.size() < 250000
+        && d.nutritionSourceUrl is string && d.nutritionSourceUrl.size() <= 500
+        && (d.nutritionSourceUrl == '' || d.nutritionSourceUrl.matches('^https?://.+'))
+        && (d.nutritionSourceType in ['product_label', 'other'] || d.nutritionSourceUrl.matches('^https?://.+'));
+    }
+
     function nutritionStaysHonest(newD, oldD) {
       return (newD.nutrition == oldD.nutrition
-              && newD.get('nutritionSourceUrl', '') == oldD.get('nutritionSourceUrl', ''))
+              && newD.get('nutritionSourceUrl', '') == oldD.get('nutritionSourceUrl', '')
+              && newD.get('nutritionSourceType', '') == oldD.get('nutritionSourceType', '')
+              && newD.get('ingredients', '') == oldD.get('ingredients', '')
+              && newD.get('nutritionEvidenceUrl', '') == oldD.get('nutritionEvidenceUrl', ''))
         ? newD.get('nutritionStatus', 'pending') == oldD.get('nutritionStatus', 'pending')
         : newD.get('nutritionStatus', 'pending') == 'pending';
     }
@@ -146,16 +173,15 @@ service cloud.firestore {
         && request.resource.data.sellerId == request.auth.uid
         && request.resource.data.id == productId
         && request.resource.data.isDisabled == false
-        && request.resource.data.nutritionSourceUrl is string
-        && request.resource.data.nutritionSourceUrl.matches('^https?://.+')
-        && request.resource.data.nutritionSourceUrl.size() <= 500
+        && validProof(request.resource.data)
         && request.resource.data.nutritionStatus == 'pending'
         && request.resource.data.businessId ==
              get(/databases/$(database)/documents/businesses/$(request.auth.uid)).data.id
         && request.resource.data.keys().hasOnly([
              'id', 'sellerId', 'businessId', 'name', 'description', 'category', 'price',
              'imageUrl', 'nutrition', 'stock', 'isAvailable', 'isDisabled', 'createdAt', 'updatedAt',
-             'nutritionSourceUrl', 'nutritionStatus'])
+             'nutritionSourceUrl', 'nutritionStatus', 'nutritionSourceType', 'ingredients',
+             'nutritionEvidenceUrl'])
         && validProduct(request.resource.data);
 
 
@@ -165,11 +191,12 @@ service cloud.firestore {
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
                  'name', 'description', 'category', 'price', 'imageUrl',
                  'nutrition', 'stock', 'isAvailable', 'isArchived', 'archivedAt', 'updatedAt',
-                 'nutritionSourceUrl', 'nutritionStatus'])
-            && (!('nutritionSourceUrl' in request.resource.data)
-                || (request.resource.data.nutritionSourceUrl is string
-                    && request.resource.data.nutritionSourceUrl.matches('^https?://.+')
-                    && request.resource.data.nutritionSourceUrl.size() <= 500))
+                 'nutritionSourceUrl', 'nutritionStatus', 'nutritionSourceType', 'ingredients',
+                 'nutritionEvidenceUrl'])
+            && (!request.resource.data.diff(resource.data).affectedKeys().hasAny([
+                  'nutrition', 'nutritionSourceUrl', 'nutritionSourceType', 'ingredients',
+                  'nutritionEvidenceUrl'])
+                || validProof(request.resource.data))
             && nutritionStaysHonest(request.resource.data, resource.data)
             && validProduct(request.resource.data))
        
@@ -258,7 +285,17 @@ service cloud.firestore {
           && resource.data.sellerId == request.auth.uid
           && validSellerStep(resource.data.status, request.resource.data.status)
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(
-               ['status', 'statusHistory', 'paymentStatus', 'prepMinutes', 'estimatedReadyAt', 'updatedAt'])
+               ['status', 'statusHistory', 'paymentStatus', 'prepMinutes', 'estimatedReadyAt',
+                'riderName', 'riderPhone', 'riderPlate', 'updatedAt'])
+          // [RIDER] dispatching a delivery needs the rider's name and phone
+          && (request.resource.data.status != 'out_for_delivery'
+              || (request.resource.data.riderName is string
+                  && request.resource.data.riderName.size() >= 2
+                  && request.resource.data.riderName.size() <= 60
+                  && request.resource.data.riderPhone is string
+                  && request.resource.data.riderPhone.size() >= 7
+                  && request.resource.data.riderPhone.size() <= 20
+                  && request.resource.data.get('riderPlate', '').size() <= 20))
           && (request.resource.data.paymentStatus == resource.data.paymentStatus
               || (request.resource.data.paymentStatus == 'paid'
                   && request.resource.data.status in ['completed', 'delivered']))

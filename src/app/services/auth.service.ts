@@ -5,11 +5,15 @@ import {
   signInWithEmailAndPassword,
   signInWithPopup,
   GoogleAuthProvider,
+  EmailAuthProvider,
+  linkWithCredential,
+  updatePassword,
+  reauthenticateWithPopup,
   signOut,
   onAuthStateChanged,
   sendEmailVerification,
   sendPasswordResetEmail,
-  User as FirebaseUser
+  User as FirebaseUser,
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { firebaseAuth, firestore } from '../firebase';
@@ -22,6 +26,7 @@ export interface AuthResult {
   message: string;
   user?: User;
   code?: string; // Firebase error code, for example 'auth/email-already-in-use'
+  needsPassword?: boolean; // [GOOGLE-PASSWORD] True when the account exists but has no password yet
 }
 
 /**
@@ -36,6 +41,8 @@ export interface AuthResult {
 export class AuthService {
   private currentUser = signal<User | null>(null);
   private verified = signal(false);
+  /** [GOOGLE-PASSWORD] Which sign-in methods this account has, e.g. ['google.com'] or ['google.com', 'password']. */
+  private providers = signal<string[]>([]);
   /** True while register()/Google login is still creating the profile, so the auth listener does not interfere. */
   private authBusy = false;
 
@@ -46,14 +53,27 @@ export class AuthService {
   readonly isSeller = computed(() => this.currentUser()?.role === 'seller');
   readonly isAdmin = computed(() => this.currentUser()?.role === 'admin');
   readonly isEmailVerified = this.verified.asReadonly();
+  /** [GOOGLE-PASSWORD] True when the account can log in with an email and password. */
+  readonly hasPasswordLogin = computed(() => this.providers().includes('password'));
+  /** [GOOGLE-PASSWORD] True when the person signed up with Google and never created a password. */
+  readonly isGoogleOnly = computed(
+    () => this.providers().includes('google.com') && !this.providers().includes('password'),
+  );
 
   /** Resolves once Firebase has finished checking if someone is already logged in. */
   readonly ready: Promise<void>;
 
-  constructor(private mockData: MockDataService, private router: Router, private cloud: CloudStoreService) {
-    this.ready = new Promise<void>(resolve => {
-      onAuthStateChanged(firebaseAuth, async fbUser => {
-        if (this.authBusy) { resolve(); return; }
+  constructor(
+    private mockData: MockDataService,
+    private router: Router,
+    private cloud: CloudStoreService,
+  ) {
+    this.ready = new Promise<void>((resolve) => {
+      onAuthStateChanged(firebaseAuth, async (fbUser) => {
+        if (this.authBusy) {
+          resolve();
+          return;
+        }
         if (fbUser) {
           const profile = await this.loadProfile(fbUser.uid);
           if (profile && profile.accountStatus === 'active') {
@@ -99,11 +119,18 @@ export class AuthService {
         // First Google login: always a customer account.
         const [firstName, ...rest] = (cred.user.displayName || 'GymPlate User').split(' ');
         profile = this.newProfile(cred.user.uid, cred.user.email || '', {
-          firstName, lastName: rest.join(' '), phone: '', role: 'customer'
+          firstName,
+          lastName: rest.join(' '),
+          phone: '',
+          role: 'customer',
         });
         await setDoc(doc(firestore, 'users', cred.user.uid), this.toFirestore(profile));
       }
-      return await this.finishLogin(cred.user);
+      const result = await this.finishLogin(cred.user);
+      if (result.success) {
+        result.needsPassword = this.isGoogleOnly();
+      }
+      return result;
     } catch (err) {
       return { success: false, message: this.friendlyError(err) };
     } finally {
@@ -121,17 +148,33 @@ export class AuthService {
   }): Promise<AuthResult> {
     this.authBusy = true;
     try {
-      const cred = await createUserWithEmailAndPassword(firebaseAuth, userData.email.trim(), userData.password);
+      const cred = await createUserWithEmailAndPassword(
+        firebaseAuth,
+        userData.email.trim(),
+        userData.password,
+      );
       // Use the email exactly as Firebase stores it (always lowercase) so it matches the security rule.
-      const profile = this.newProfile(cred.user.uid, cred.user.email || userData.email.trim().toLowerCase(), userData);
+      const profile = this.newProfile(
+        cred.user.uid,
+        cred.user.email || userData.email.trim().toLowerCase(),
+        userData,
+      );
       await setDoc(doc(firestore, 'users', cred.user.uid), this.toFirestore(profile));
       await this.cloud.startFor(profile); // start loading this person's Firestore data
       this.setUser(profile, cred.user);
       // Verification email helps block fake accounts.
-      try { await sendEmailVerification(cred.user); } catch { /* not critical */ }
+      try {
+        await sendEmailVerification(cred.user);
+      } catch {
+        /* not critical */
+      }
       return { success: true, message: 'Account created successfully!', user: profile };
     } catch (err) {
-      return { success: false, message: this.friendlyError(err), code: (err as { code?: string })?.code };
+      return {
+        success: false,
+        message: this.friendlyError(err),
+        code: (err as { code?: string })?.code,
+      };
     } finally {
       this.authBusy = false;
     }
@@ -154,7 +197,64 @@ export class AuthService {
   async resendVerificationEmail(): Promise<boolean> {
     const fbUser = firebaseAuth.currentUser;
     if (!fbUser) return false;
-    try { await sendEmailVerification(fbUser); return true; } catch { return false; }
+    try {
+      await sendEmailVerification(fbUser);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  // ─── Password for Google accounts ────────────────────────────────────
+
+  /**
+   * [GOOGLE-PASSWORD] Lets a person who signed up with Google create a GymPlate password
+   * from inside the app (no email link needed). Afterwards the same account can log in
+   * with Google OR with email + password, because Firebase keeps both methods on ONE account.
+   *
+   * It also works to change the password of an account that already has one.
+   */
+  async setPassword(newPassword: string): Promise<AuthResult> {
+    const fbUser = firebaseAuth.currentUser;
+    if (!fbUser || !fbUser.email) {
+      return { success: false, message: 'Please log in first.' };
+    }
+    if (newPassword.length < 6) {
+      return { success: false, message: 'Password is too weak. Use at least 6 characters.' };
+    }
+    try {
+      try {
+        await this.linkPassword(fbUser, newPassword);
+      } catch (err) {
+        // Firebase asks for a fresh login before changing sign-in methods. Ask Google once more, then retry.
+        if ((err as { code?: string })?.code === 'auth/requires-recent-login') {
+          await reauthenticateWithPopup(fbUser, new GoogleAuthProvider());
+          await this.linkPassword(fbUser, newPassword);
+        } else {
+          throw err;
+        }
+      }
+      this.providers.set(fbUser.providerData.map((p) => p.providerId));
+      return {
+        success: true,
+        message: 'Password saved. You can now log in with your email and password, or with Google.',
+      };
+    } catch (err) {
+      return {
+        success: false,
+        message: this.friendlyError(err),
+        code: (err as { code?: string })?.code,
+      };
+    }
+  }
+
+  private async linkPassword(fbUser: FirebaseUser, password: string): Promise<void> {
+    const alreadyHasPassword = fbUser.providerData.some((p) => p.providerId === 'password');
+    if (alreadyHasPassword) {
+      await updatePassword(fbUser, password);
+    } else {
+      await linkWithCredential(fbUser, EmailAuthProvider.credential(fbUser.email!, password));
+    }
   }
 
   // ─── Profile ─────────────────────────────────────────────────────────
@@ -171,7 +271,7 @@ export class AuthService {
       city: updates.city ?? user.city,
       state: updates.state ?? user.state,
       zipCode: updates.zipCode ?? user.zipCode,
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
     };
     try {
       await updateDoc(doc(firestore, 'users', user.id), safe);
@@ -218,7 +318,10 @@ export class AuthService {
     }
     if (profile.accountStatus === 'suspended') {
       await this.logout(false);
-      return { success: false, message: 'Your account has been suspended. Please contact support.' };
+      return {
+        success: false,
+        message: 'Your account has been suspended. Please contact support.',
+      };
     }
     await this.cloud.startFor(profile);
     this.setUser(profile, fbUser);
@@ -244,36 +347,57 @@ export class AuthService {
         avatarUrl: d['avatarUrl'],
         accountStatus: d['accountStatus'] ?? 'active',
         createdAt: new Date(d['createdAt'] ?? Date.now()),
-        updatedAt: new Date(d['updatedAt'] ?? Date.now())
+        updatedAt: new Date(d['updatedAt'] ?? Date.now()),
       };
     } catch {
       return null;
     }
   }
 
-  private newProfile(uid: string, email: string, data: { firstName: string; lastName: string; phone: string; role: 'customer' | 'seller' }): User {
+  private newProfile(
+    uid: string,
+    email: string,
+    data: { firstName: string; lastName: string; phone: string; role: 'customer' | 'seller' },
+  ): User {
     const now = new Date();
     return {
-      id: uid, email, role: data.role,
-      firstName: data.firstName, lastName: data.lastName, phone: data.phone,
-      address: '', city: '', state: '', zipCode: '',
-      accountStatus: 'active', createdAt: now, updatedAt: now
+      id: uid,
+      email,
+      role: data.role,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      phone: data.phone,
+      address: '',
+      city: '',
+      state: '',
+      zipCode: '',
+      accountStatus: 'active',
+      createdAt: now,
+      updatedAt: now,
     };
   }
 
   private toFirestore(u: User) {
     return {
-      email: u.email, role: u.role,
-      firstName: u.firstName, lastName: u.lastName, phone: u.phone,
-      address: u.address, city: u.city, state: u.state, zipCode: u.zipCode,
+      email: u.email,
+      role: u.role,
+      firstName: u.firstName,
+      lastName: u.lastName,
+      phone: u.phone,
+      address: u.address,
+      city: u.city,
+      state: u.state,
+      zipCode: u.zipCode,
       accountStatus: u.accountStatus,
-      createdAt: u.createdAt.toISOString(), updatedAt: u.updatedAt.toISOString()
+      createdAt: u.createdAt.toISOString(),
+      updatedAt: u.updatedAt.toISOString(),
     };
   }
 
   private setUser(profile: User, fbUser: FirebaseUser): void {
     this.currentUser.set(profile);
     this.verified.set(fbUser.emailVerified);
+    this.providers.set(fbUser.providerData.map((p) => p.providerId));
     this.syncToMock(profile);
   }
 
@@ -282,6 +406,7 @@ export class AuthService {
     this.mockData.clearCloudData();
     this.currentUser.set(null);
     this.verified.set(false);
+    this.providers.set([]);
   }
 
   /** TEMPORARY: other pages still read users from the mock store. Remove when users move fully to Firestore. */
@@ -298,9 +423,10 @@ export class AuthService {
       case 'auth/wrong-password':
       case 'auth/user-not-found':
       case 'auth/invalid-email':
-        return 'Incorrect email or password.';
+        // [GOOGLE-LOGIN] Google accounts have no GymPlate password until they create one
+        return 'Incorrect email or password. If you signed up with Google, use "Continue with Google". You can create a password for your account in Profile after signing in with Google.';
       case 'auth/email-already-in-use':
-        return 'An account with this email already exists.';
+        return 'An account with this email already exists. If you signed up with Google, use "Continue with Google" instead.';
       case 'auth/weak-password':
         return 'Password is too weak. Use at least 6 characters.';
       case 'auth/too-many-requests':
@@ -308,8 +434,15 @@ export class AuthService {
       case 'auth/popup-closed-by-user':
       case 'auth/cancelled-popup-request':
         return 'Google sign-in was cancelled.';
+      case 'auth/popup-blocked':
+        return 'Your browser blocked the sign-in window. Allow pop-ups for this site and try again.';
       case 'auth/operation-not-allowed':
         return 'This sign-in method is not enabled yet.';
+      case 'auth/requires-recent-login':
+        return 'For your security, please sign in again and retry.';
+      case 'auth/credential-already-in-use':
+      case 'auth/provider-already-linked':
+        return 'This account already has a password. Use "Forgot password" if you need to reset it.';
       case 'auth/network-request-failed':
         return 'Network error. Check your internet connection.';
       default:

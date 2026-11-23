@@ -189,9 +189,15 @@ export class OrderService {
     newStatus: OrderStatus,
     note?: string,
     prepMinutes?: number,
+    rider?: { name: string; phone: string; plate?: string },
   ): { success: boolean; message: string } {
     const order = this.mockData.getOrder(orderId);
     if (!order) return { success: false, message: 'Order not found.' };
+
+    // [RIDER] a delivery cannot leave the kitchen without a rider
+    if (newStatus === 'out_for_delivery' && !(rider?.name?.trim() && rider?.phone?.trim())) {
+      return { success: false, message: "Enter the rider's name and phone number before dispatching." };
+    }
 
     if (newStatus === 'cancelled') {
       const user = this.authService.user();
@@ -200,7 +206,7 @@ export class OrderService {
       }
     }
 
-    return this.applyStatus(order, newStatus, note, prepMinutes);
+    return this.applyStatus(order, newStatus, note, prepMinutes, undefined, false, rider);
   }
 
   cancelOrder(orderId: string, reason?: string): { success: boolean; message: string } {
@@ -232,6 +238,7 @@ export class OrderService {
     prepMinutes?: number,
     restoreStockFor?: OrderItem[],
     silent = false, // automatic changes should not pop up an alert if they fail
+    rider?: { name: string; phone: string; plate?: string },
   ): { success: boolean; message: string } {
     const allowed = this.validTransitions[order.status];
     if (!allowed.includes(newStatus)) {
@@ -252,6 +259,9 @@ export class OrderService {
       status: newStatus,
       prepMinutes: newStatus === 'preparing' && prepMinutes ? prepMinutes : order.prepMinutes,
       estimatedReadyAt,
+      riderName: rider ? rider.name.trim() : order.riderName,
+      riderPhone: rider ? rider.phone.trim() : order.riderPhone,
+      riderPlate: rider ? (rider.plate || '').trim() : order.riderPlate,
       statusHistory: [...order.statusHistory, { status: newStatus, timestamp: new Date(), note }],
       paymentStatus:
         newStatus === 'completed' || newStatus === 'delivered' ? 'paid' : order.paymentStatus,

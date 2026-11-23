@@ -113,6 +113,7 @@ import { CloudStoreService } from '../../services/cloud-store.service';
                       <span class="badge" [ngClass]="'badge-' + getBadgeClass(a.status)">
                         {{ formatStatus(a.status) }}
                       </span>
+                      <span class="badge badge-info ml-1" *ngIf="a.status === 'pending' && a.appealNote">Resubmitted</span>
                     </td>
                     <td class="text-right">
                       <a

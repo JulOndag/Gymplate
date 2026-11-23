@@ -5,6 +5,10 @@ import { CloudStoreService } from './cloud-store.service';
 import { DEMO_MEALS, EXTRA_MEALS } from '../data/sample-meals';
 import { makePlaceholderImage } from '../shared/utils/image.util';
 
+// tiny placeholder picture used by the demo sample meals (a real seller uploads a real label photo)
+const SAMPLE_EVIDENCE =
+  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg==';
+
 export interface ProductFilters {
   search: string;
   category: string;
@@ -116,6 +120,9 @@ export class ProductService {
         isAvailable: true,
         isDisabled: false,
         nutritionSourceUrl: 'https://fdc.nal.usda.gov/', // [NUTRITION-REVIEW] sample meals point to USDA FoodData Central
+        nutritionSourceType: 'usda',
+        ingredients: 'Sample demo data. The seller should replace this with the real ingredients and weights.',
+        nutritionEvidenceUrl: SAMPLE_EVIDENCE,
         nutritionStatus: 'pending',
         createdAt: now,
         updatedAt: now

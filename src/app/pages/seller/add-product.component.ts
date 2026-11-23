@@ -9,11 +9,13 @@ import { Product, Category } from '../../models';
 import { SellerSidebarComponent } from '../../shared/components/seller-sidebar.component';
 import { IconComponent } from '../../shared/components/icon.component';
 import { compressImageToDataUrl } from '../../shared/utils/image.util'; // [PRODUCTS-FS #10]
+import { NutritionProofFieldsComponent } from '../../shared/components/nutrition-proof-fields.component';
+import { ProofErrors, validateNutritionProof, hasProofErrors } from '../../shared/utils/nutrition-proof.util';
 
 @Component({
   selector: 'app-add-product',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, SellerSidebarComponent, IconComponent],
+  imports: [CommonModule, FormsModule, RouterLink, SellerSidebarComponent, IconComponent, NutritionProofFieldsComponent],
   template: `
     <div class="seller-layout">
       <app-seller-sidebar></app-seller-sidebar>
@@ -235,23 +237,8 @@ import { compressImageToDataUrl } from '../../shared/utils/image.util'; // [PROD
                 </div>
               </div>
 
-              <!-- [NUTRITION-REVIEW] Reference link so the admin can check the numbers -->
-              <div class="form-group mt-4">
-                <label class="form-label" for="nutritionSource">Nutrition Reference Link <span class="text-danger">*</span></label>
-                <input
-                  id="nutritionSource"
-                  type="url"
-                  class="form-control"
-                  placeholder="https://... (brand page, USDA FoodData Central, label photo page)"
-                  [(ngModel)]="product.nutritionSourceUrl"
-                  name="nutritionSourceUrl"
-                  required
-                />
-                <small class="text-xs text-secondary">
-                  The admin opens this link to check your protein, carbs, fat and calories before the numbers are marked "Verified".
-                </small>
-                <small class="text-xs text-danger block" *ngIf="sourceError">{{ sourceError }}</small>
-              </div>
+              <!-- [NUTRITION-PROOF] source, link, ingredients, photo evidence, calorie check, confirmation -->
+              <app-nutrition-proof-fields [product]="product" [errors]="proofErrors" [state]="proofState"></app-nutrition-proof-fields>
 
               <!-- Stock & Availability -->
               <div class="section-divider mt-6">
@@ -531,7 +518,8 @@ export class AddProductComponent implements OnInit {
     createdAt: new Date(),
     updatedAt: new Date()
   };
-  sourceError = '';
+  proofErrors: ProofErrors = {};
+  proofState = { confirmed: false };
 
   constructor(
     private authService: AuthService,
@@ -639,11 +627,11 @@ export class AddProductComponent implements OnInit {
       return;
     }
 
-    // [NUTRITION-REVIEW] a reference link is required so the admin can verify the numbers
-    this.sourceError = '';
+    // [NUTRITION-PROOF] source, ingredients, photo evidence and honest calories are required
     this.product.nutritionSourceUrl = (this.product.nutritionSourceUrl || '').trim();
-    if (!/^https?:\/\/\S+\.\S+/i.test(this.product.nutritionSourceUrl)) {
-      this.sourceError = 'Enter a valid link that starts with https:// where the nutrition numbers can be checked.';
+    this.proofErrors = validateNutritionProof(this.product, this.proofState.confirmed);
+    if (hasProofErrors(this.proofErrors)) {
+      this.cdr.markForCheck();
       return;
     }
     this.product.nutritionStatus = 'pending';
